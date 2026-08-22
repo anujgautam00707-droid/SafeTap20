@@ -1,0 +1,8 @@
+package com.safetap.app.domain.sos.services
+
+import android.content.Intent
+
+interface EmergencyCallManager {
+    fun getEmergencyDialIntent(emergencyNumber: String = "911"): Intent
+    fun launchEmergencyDialer(emergencyNumber: String = "911"): Result<Unit>
+}

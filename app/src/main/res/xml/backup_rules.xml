@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- TODO: Restrict backup of SOS logs and auth tokens once those features exist. -->
+</full-backup-content>

@@ -1,0 +1,7 @@
+# Add project specific R8 rules here.
+# AGP will combine all keep rule files in src/main/keepRules to pass to R8.
+#
+# TODO: Add keep rules for serialization and SOS-related models.
+
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
