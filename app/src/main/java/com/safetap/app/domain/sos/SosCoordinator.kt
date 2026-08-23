@@ -11,11 +11,13 @@ import com.safetap.app.domain.sos.services.EmergencyNotificationManager
 import com.safetap.app.domain.sos.services.EmergencySmsSender
 import com.safetap.app.domain.sos.services.LocationProvider
 import com.safetap.app.domain.sos.services.PermissionChecker
+import com.safetap.app.domain.sos.services.SmsRecipientStatus
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 
 class SosCoordinator(
@@ -31,6 +33,9 @@ class SosCoordinator(
 ) {
 
     private var currentActiveSosId: String? = null
+
+    val smsDeliveryStatuses: StateFlow<List<SmsRecipientStatus>> =
+        emergencySmsSender.deliveryStatuses
 
     fun checkPermissions(): Result<Unit> {
         return if (permissionChecker.hasRequiredPermissions()) {
@@ -139,6 +144,9 @@ class SosCoordinator(
                 contact.phone
             }
 
+            // Prevent callback results from an older SOS appearing in the new one.
+            emergencySmsSender.clearDeliveryStatuses()
+
             val smsResult = emergencySmsSender.sendEmergencyMessage(
                 recipients = recipients,
                 message = buildEmergencySmsMessage(emergencyData)
@@ -240,10 +248,16 @@ class SosCoordinator(
         }
     }
 
+    fun clearSmsDeliveryStatuses() {
+        emergencySmsSender.clearDeliveryStatuses()
+    }
+
     fun openEmergencyDialer(
         emergencyNumber: String = "100"
     ): Result<Unit> {
-        return callManager.launchEmergencyDialer(emergencyNumber)
+        return callManager.launchEmergencyDialer(
+            emergencyNumber = emergencyNumber
+        )
     }
 
     fun getActiveSosId(): String? = currentActiveSosId
