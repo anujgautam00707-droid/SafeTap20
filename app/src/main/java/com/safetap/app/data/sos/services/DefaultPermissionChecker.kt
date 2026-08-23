@@ -8,27 +8,43 @@ import androidx.core.content.ContextCompat
 import com.safetap.app.domain.sos.services.PermissionChecker
 
 class DefaultPermissionChecker(
-    private val context: Context
+    context: Context
 ) : PermissionChecker {
 
+    private val appContext = context.applicationContext
+
     override fun hasLocationPermission(): Boolean {
-        val fineLocation = ContextCompat.checkSelfPermission(
-            context,
+        val hasFineLocation = ContextCompat.checkSelfPermission(
+            appContext,
             Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-        val coarseLocation = ContextCompat.checkSelfPermission(
-            context,
+        val hasCoarseLocation = ContextCompat.checkSelfPermission(
+            appContext,
             Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-        return fineLocation || coarseLocation
+        return hasFineLocation || hasCoarseLocation
+    }
+
+    override fun hasSmsPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            appContext,
+            Manifest.permission.SEND_SMS
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    override fun hasCallPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            appContext,
+            Manifest.permission.CALL_PHONE
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     override fun hasNotificationPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(
-                context,
+                appContext,
                 Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
         } else {
@@ -37,6 +53,8 @@ class DefaultPermissionChecker(
     }
 
     override fun hasRequiredPermissions(): Boolean {
-        return hasLocationPermission()
+        return hasLocationPermission() &&
+                hasSmsPermission() &&
+                hasCallPermission()
     }
 }

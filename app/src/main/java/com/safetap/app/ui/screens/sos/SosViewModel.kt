@@ -6,6 +6,7 @@ import com.safetap.app.data.auth.AuthRepository
 import com.safetap.app.domain.sos.SosCoordinator
 import com.safetap.app.domain.sos.model.SosError
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,30 +25,27 @@ class SosViewModel(
         _batteryPercentage.asStateFlow()
 
     private var countdownJob: Job? = null
+    private var delayedCallJob: Job? = null
 
     init {
         refreshBatteryPercentage()
     }
 
-    /**
-     * Reads the current battery percentage through the SOS domain layer.
-     */
     fun refreshBatteryPercentage() {
         viewModelScope.launch {
             runCatching {
                 sosCoordinator.getBatteryPercentage()
             }.getOrNull()
-                ?.takeIf { percentage -> percentage in 0..100 }
+                ?.takeIf { percentage ->
+                    percentage in MINIMUM_BATTERY_PERCENTAGE..
+                            MAXIMUM_BATTERY_PERCENTAGE
+                }
                 ?.let { percentage ->
                     _batteryPercentage.value = percentage
                 }
         }
     }
 
-    /**
-     * Starts the SOS flow: checks permissions, runs the countdown,
-     * and dispatches the SOS event.
-     */
     fun startSos() {
         if (
             _uiState.value is SosUiState.Countdown ||
@@ -56,89 +54,73 @@ class SosViewModel(
             return
         }
 
+        cancelPendingJobs()
         refreshBatteryPercentage()
         _uiState.value = SosUiState.CheckingPermissions
 
         val permissionCheck = sosCoordinator.checkPermissions()
 
         if (permissionCheck.isFailure) {
-            val error =
-                permissionCheck.exceptionOrNull() as? SosError
-                    ?: SosError.PermissionDenied()
-
-            _uiState.value = SosUiState.Error(
-                error = error,
-                message = error.message
+            showFailure(
+                throwable = permissionCheck.exceptionOrNull(),
+                fallback = SosError.PermissionDenied()
             )
             return
         }
 
-        countdownJob?.cancel()
-
         countdownJob = viewModelScope.launch {
-            _uiState.value = SosUiState.Countdown(5)
+            _uiState.value = SosUiState.Countdown(
+                secondsRemaining = SOS_COUNTDOWN_SECONDS
+            )
 
-            val countdownResult =
-                sosCoordinator.runCountdown(5) { secondsRemaining ->
-                    _uiState.value =
-                        SosUiState.Countdown(secondsRemaining)
-                }
+            val countdownResult = sosCoordinator.runCountdown(
+                durationSeconds = SOS_COUNTDOWN_SECONDS
+            ) { secondsRemaining ->
+                _uiState.value = SosUiState.Countdown(
+                    secondsRemaining = secondsRemaining
+                )
+            }
 
             if (countdownResult.isSuccess) {
                 dispatchEmergencySos()
-            } else {
-                val error =
-                    countdownResult.exceptionOrNull() as? SosError
+                return@launch
+            }
 
-                when {
-                    error is SosError.Cancelled -> {
-                        _uiState.value = SosUiState.Cancelled
-                    }
+            val error = countdownResult.exceptionOrNull() as? SosError
 
-                    error != null -> {
-                        _uiState.value = SosUiState.Error(
-                            error = error,
-                            message = error.message
-                        )
-                    }
+            when (error) {
+                is SosError.Cancelled -> {
+                    _uiState.value = SosUiState.Cancelled
+                }
+
+                null -> Unit
+
+                else -> {
+                    _uiState.value = SosUiState.Error(
+                        error = error,
+                        message = error.message
+                    )
                 }
             }
         }
     }
 
-    /**
-     * Cancels any active countdown or SOS alert.
-     */
-    fun cancelSos() {
-        countdownJob?.cancel()
-        countdownJob = null
-
-        viewModelScope.launch {
-            sosCoordinator.cancelSos()
-            refreshBatteryPercentage()
-            _uiState.value = SosUiState.Cancelled
-        }
-    }
-
-    /**
-     * Skips the countdown and dispatches the emergency SOS immediately.
-     */
     fun triggerImmediately() {
         countdownJob?.cancel()
         countdownJob = null
+
+        delayedCallJob?.cancel()
+        delayedCallJob = null
+
         refreshBatteryPercentage()
 
         viewModelScope.launch {
             val permissionCheck = sosCoordinator.checkPermissions()
 
             if (permissionCheck.isFailure) {
-                val error =
-                    permissionCheck.exceptionOrNull() as? SosError
-                        ?: SosError.PermissionDenied()
-
-                _uiState.value = SosUiState.Error(
-                    error = error,
-                    message = error.message
+                showFailure(
+                    throwable = permissionCheck.exceptionOrNull(),
+                    fallback = SosError.PermissionDenied()
                 )
                 return@launch
             }
@@ -147,12 +129,25 @@ class SosViewModel(
         }
     }
 
-    /**
-     * Returns the SOS screen to its idle state.
-     */
+    fun cancelSos() {
+        cancelPendingJobs()
+
+        viewModelScope.launch {
+            val result = sosCoordinator.cancelSos()
+
+            if (result.isSuccess) {
+                refreshBatteryPercentage()
+                _uiState.value = SosUiState.Cancelled
+            } else {
+                showFailure(
+                    throwable = result.exceptionOrNull()
+                )
+            }
+        }
+    }
+
     fun resetSos() {
-        countdownJob?.cancel()
-        countdownJob = null
+        cancelPendingJobs()
 
         viewModelScope.launch {
             sosCoordinator.cancelSos()
@@ -161,34 +156,25 @@ class SosViewModel(
         }
     }
 
-    /**
-     * Opens the phone dialer with the designated emergency number.
-     */
     fun openEmergencyDialer(
-        emergencyNumber: String = "911"
+        emergencyNumber: String = DEFAULT_EMERGENCY_NUMBER
     ): Result<Unit> {
-        val result =
-            sosCoordinator.openEmergencyDialer(emergencyNumber)
+        val result = sosCoordinator.openEmergencyDialer(
+            emergencyNumber = emergencyNumber
+        )
 
         if (result.isFailure) {
-            val error =
-                result.exceptionOrNull() as? SosError
-                    ?: SosError.NoDialerApp(
-                        "Failed to open emergency dialer."
-                    )
-
-            _uiState.value = SosUiState.Error(
-                error = error,
-                message = error.message
+            showFailure(
+                throwable = result.exceptionOrNull(),
+                fallback = SosError.NoDialerApp(
+                    "Failed to open emergency dialer."
+                )
             )
         }
 
         return result
     }
 
-    /**
-     * Compatibility hook for existing callers.
-     */
     fun onSosPressed() {
         triggerImmediately()
     }
@@ -197,35 +183,87 @@ class SosViewModel(
         _uiState.value = SosUiState.CollectingEmergencyData
 
         val userId =
-            authRepository?.currentUser?.uid ?: "user_placeholder"
+            authRepository?.currentUser?.uid ?: FALLBACK_USER_ID
 
-        val result =
-            sosCoordinator.triggerSos(userId = userId)
+        val result = sosCoordinator.triggerSos(
+            userId = userId
+        )
 
-        if (result.isSuccess) {
-            val emergencyData = result.getOrThrow()
-
-            _batteryPercentage.value =
-                emergencyData.batteryPercentage
-
-            _uiState.value =
-                SosUiState.Active(emergencyData)
-        } else {
-            val error =
-                result.exceptionOrNull() as? SosError
-                    ?: SosError.UnexpectedError(
-                        result.exceptionOrNull()
-                    )
-
-            _uiState.value = SosUiState.Error(
-                error = error,
-                message = error.message
+        if (result.isFailure) {
+            showFailure(
+                throwable = result.exceptionOrNull()
             )
+            return
+        }
+
+        val emergencyData = result.getOrThrow()
+
+        _batteryPercentage.value =
+            emergencyData.batteryPercentage
+
+        _uiState.value =
+            SosUiState.Active(emergencyData)
+
+        schedulePrimaryContactCall()
+    }
+
+    private fun schedulePrimaryContactCall() {
+        delayedCallJob?.cancel()
+
+        delayedCallJob = viewModelScope.launch {
+            delay(PRIMARY_CONTACT_CALL_DELAY_MILLIS)
+
+            if (_uiState.value !is SosUiState.Active) {
+                return@launch
+            }
+
+            val callResult =
+                sosCoordinator.callPrimaryTrustedContact()
+
+            if (callResult.isFailure) {
+                showFailure(
+                    throwable = callResult.exceptionOrNull(),
+                    fallback = SosError.UnexpectedError(
+                        message = "The primary trusted contact could not be called."
+                    )
+                )
+            }
         }
     }
 
-    override fun onCleared() {
+    private fun cancelPendingJobs() {
         countdownJob?.cancel()
+        countdownJob = null
+
+        delayedCallJob?.cancel()
+        delayedCallJob = null
+    }
+
+    private fun showFailure(
+        throwable: Throwable?,
+        fallback: SosError = SosError.UnexpectedError(throwable)
+    ) {
+        val error = throwable as? SosError ?: fallback
+
+        _uiState.value = SosUiState.Error(
+            error = error,
+            message = error.message
+        )
+    }
+
+    override fun onCleared() {
+        cancelPendingJobs()
         super.onCleared()
+    }
+
+    private companion object {
+        const val SOS_COUNTDOWN_SECONDS = 5
+        const val PRIMARY_CONTACT_CALL_DELAY_MILLIS = 30_000L
+
+        const val MINIMUM_BATTERY_PERCENTAGE = 0
+        const val MAXIMUM_BATTERY_PERCENTAGE = 100
+
+        const val DEFAULT_EMERGENCY_NUMBER = "100"
+        const val FALLBACK_USER_ID = "user_placeholder"
     }
 }
