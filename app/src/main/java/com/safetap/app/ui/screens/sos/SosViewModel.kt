@@ -263,7 +263,7 @@ class SosViewModel(
         const val MINIMUM_BATTERY_PERCENTAGE = 0
         const val MAXIMUM_BATTERY_PERCENTAGE = 100
 
-        const val DEFAULT_EMERGENCY_NUMBER = "100"
+        const val DEFAULT_EMERGENCY_NUMBER = "112"
         const val FALLBACK_USER_ID = "user_placeholder"
     }
 }

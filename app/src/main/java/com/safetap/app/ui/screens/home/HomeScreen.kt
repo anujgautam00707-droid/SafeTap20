@@ -1,6 +1,7 @@
 package com.safetap.app.ui.screens.home
 
 import android.content.Intent
+import android.media.MediaPlayer
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -53,6 +54,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,6 +73,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.safetap.app.di.SafeTapViewModelFactory
+import com.safetap.app.R
 import com.safetap.app.ui.components.EmergencyPulseButton
 import com.safetap.app.ui.components.QuickActionCard
 import com.safetap.app.ui.theme.EmergencyRed
@@ -81,6 +85,7 @@ import com.safetap.app.ui.theme.SafeGreenContainer
 import com.safetap.app.ui.theme.SafeGreenLight
 import com.safetap.app.ui.theme.WarningAmber
 import com.safetap.app.ui.theme.WarningAmberContainer
+import kotlinx.coroutines.delay
 
 data class ActivityItem(
     val title: String,
@@ -105,6 +110,16 @@ fun HomeScreen(
     var showFakeCallModal by remember { mutableStateOf(false) }
     var showLiveLocationDialog by remember { mutableStateOf(false) }
     var fakeCallCountdown by remember { mutableStateOf(false) }
+    var showIncomingFakeCall by remember { mutableStateOf(false) }
+
+    LaunchedEffect(fakeCallCountdown) {
+        if (fakeCallCountdown) {
+            delay(FAKE_CALL_DELAY_MILLIS)
+            fakeCallCountdown = false
+            showFakeCallModal = false
+            showIncomingFakeCall = true
+        }
+    }
 
     val recentActivities = remember {
         listOf(
@@ -154,20 +169,20 @@ fun HomeScreen(
                 )
             },
             text = {
-                Text("Do you want to dial emergency dispatch (911 / 112) immediately?")
+                Text("Do you want to call India's emergency response service (112) immediately?")
             },
             confirmButton = {
                 Button(
                     onClick = {
                         showEmergencyCallDialog = false
                         val intent = Intent(Intent.ACTION_DIAL).apply {
-                            data = Uri.parse("tel:911")
+                            data = Uri.parse("tel:112")
                         }
                         context.startActivity(intent)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = EmergencyRed)
                 ) {
-                    Text("Call 911", color = EmergencyWhite)
+                    Text("Call 112", color = EmergencyWhite)
                 }
             },
             dismissButton = {
@@ -392,7 +407,7 @@ fun HomeScreen(
         ) {
             QuickActionCard(
                 title = "Emergency Call",
-                subtitle = "Dial 911 / 112",
+                subtitle = "Dial 112",
                 icon = Icons.Filled.Call,
                 iconTint = EmergencyRed,
                 iconBackgroundColor = EmergencyRedContainer,
@@ -540,6 +555,12 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
     }
+
+    if (showIncomingFakeCall) {
+        FakeIncomingCallOverlay(
+            onDismiss = { showIncomingFakeCall = false }
+        )
+    }
 }
 
 @Composable
@@ -629,4 +650,109 @@ private fun StatusReadyBanner() {
             }
         }
     }
+
 }
+
+@Composable
+private fun FakeIncomingCallOverlay(
+    onDismiss: () -> Unit
+) {
+    var isAnswered by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    DisposableEffect(isAnswered) {
+        val ringtonePlayer = if (isAnswered) {
+            null
+        } else {
+            MediaPlayer.create(context, R.raw.call_ringtone)?.apply {
+                isLooping = true
+                start()
+            }
+        }
+
+        onDispose {
+            ringtonePlayer?.release()
+        }
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = Color(0xFF101010)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Surface(
+                    modifier = Modifier.size(112.dp),
+                    shape = CircleShape,
+                    color = WarningAmber
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.PhoneInTalk,
+                        contentDescription = null,
+                        tint = EmergencyWhite,
+                        modifier = Modifier.padding(28.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Incoming call",
+                    color = EmergencyWhite,
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "SafeTap Support",
+                    color = EmergencyWhite,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = if (isAnswered) "Connected" else "Mobile",
+                    color = Color.LightGray,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+
+            if (isAnswered) {
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(containerColor = EmergencyRed),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("End fake call")
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Button(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.buttonColors(containerColor = EmergencyRed),
+                        modifier = Modifier.size(width = 140.dp, height = 56.dp)
+                    ) {
+                        Text("Decline")
+                    }
+                    Button(
+                        onClick = { isAnswered = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = SafeGreen),
+                        modifier = Modifier.size(width = 140.dp, height = 56.dp)
+                    ) {
+                        Text("Answer")
+                    }
+                }
+            }
+        }
+    }
+}
+
+private const val FAKE_CALL_DELAY_MILLIS = 5_000L
