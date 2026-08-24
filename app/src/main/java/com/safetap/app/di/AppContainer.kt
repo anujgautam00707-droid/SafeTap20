@@ -4,6 +4,7 @@ import android.content.Context
 import com.safetap.app.data.auth.AuthRepository
 import com.safetap.app.data.auth.FirebaseAuthManager
 import com.safetap.app.data.contacts.TrustedContactsRepository
+import com.safetap.app.data.status.AppStatusRepository
 import com.safetap.app.data.sos.FakeSosRemoteDataSource
 import com.safetap.app.data.sos.SosRemoteDataSource
 import com.safetap.app.data.sos.services.DefaultBatteryProvider
@@ -26,6 +27,9 @@ object AppContainer {
         private set
 
     lateinit var trustedContactsRepository: TrustedContactsRepository
+        private set
+
+    lateinit var appStatusRepository: AppStatusRepository
         private set
 
     lateinit var permissionChecker: PermissionChecker
@@ -56,6 +60,7 @@ object AppContainer {
         get() =
             ::authRepository.isInitialized &&
                     ::trustedContactsRepository.isInitialized &&
+                    ::appStatusRepository.isInitialized &&
                     ::emergencySmsSender.isInitialized &&
                     ::sosCoordinator.isInitialized
 
@@ -72,8 +77,14 @@ object AppContainer {
 
         val appContext = context.applicationContext
 
+        appStatusRepository =
+            AppStatusRepository(appContext)
+
         trustedContactsRepository =
-            TrustedContactsRepository(appContext)
+            TrustedContactsRepository(
+                context = appContext,
+                appStatusRepository = appStatusRepository
+            )
 
         permissionChecker =
             DefaultPermissionChecker(appContext)
@@ -81,7 +92,8 @@ object AppContainer {
         locationProvider =
             DefaultLocationProvider(
                 context = appContext,
-                permissionChecker = permissionChecker
+                permissionChecker = permissionChecker,
+                appStatusRepository = appStatusRepository
             )
 
         batteryProvider =
@@ -110,6 +122,7 @@ object AppContainer {
             callManager = emergencyCallManager,
             emergencySmsSender = emergencySmsSender,
             trustedContactsRepository = trustedContactsRepository,
+            appStatusRepository = appStatusRepository,
             remoteDataSource = sosRemoteDataSource
         )
     }

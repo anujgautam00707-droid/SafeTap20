@@ -329,10 +329,10 @@ fun TrustedContactsScreen(
                     )
 
                     Text(
-                        text = if (contactsList.isEmpty()) {
-                            "No emergency contacts linked"
-                        } else {
-                            "${contactsList.size} contacts will receive instant SOS alerts"
+                        text = when (contactsList.size) {
+                            0 -> "0 contacts linked"
+                            1 -> "1 contact linked"
+                            else -> "${contactsList.size} contacts linked"
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -352,7 +352,7 @@ fun TrustedContactsScreen(
                             )
                     ) {
                         Text(
-                            text = "${contactsList.size} ALLIES",
+                            text = "${contactsList.size} ${if (contactsList.size == 1) "ALLY" else "ALLIES"}",
                             color = MaterialTheme.colorScheme.primary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold

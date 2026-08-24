@@ -8,6 +8,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.os.CancellationSignal
+import com.safetap.app.data.status.AppStatusRepository
 import com.safetap.app.domain.sos.model.LocationResult
 import com.safetap.app.domain.sos.services.LocationProvider
 import com.safetap.app.domain.sos.services.PermissionChecker
@@ -20,7 +21,8 @@ import kotlin.coroutines.resume
 
 class DefaultLocationProvider(
     private val context: Context,
-    private val permissionChecker: PermissionChecker
+    private val permissionChecker: PermissionChecker,
+    private val appStatusRepository: AppStatusRepository
 ) : LocationProvider {
 
     private val locationManager by lazy {
@@ -60,6 +62,7 @@ class DefaultLocationProvider(
                         ) { location: Location? ->
                             if (continuation.isActive) {
                                 if (location != null) {
+                                    appStatusRepository.updateLocationSynchronized()
                                     continuation.resume(location.toLocationResult(isLastKnown = false))
                                 } else {
                                     continuation.resume(null)
@@ -76,6 +79,7 @@ class DefaultLocationProvider(
                         override fun onLocationChanged(location: Location) {
                             lm.removeUpdates(this)
                             if (continuation.isActive) {
+                                appStatusRepository.updateLocationSynchronized()
                                 continuation.resume(location.toLocationResult(isLastKnown = false))
                             }
                         }

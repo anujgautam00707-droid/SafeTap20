@@ -1,6 +1,7 @@
 package com.safetap.app.data.contacts
 
 import android.content.Context
+import com.safetap.app.data.status.AppStatusRepository
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +18,8 @@ data class TrustedContact(
 )
 
 class TrustedContactsRepository(
-    context: Context
+    context: Context,
+    private val appStatusRepository: AppStatusRepository
 ) {
 
     private val preferences = context.applicationContext.getSharedPreferences(
@@ -68,6 +70,8 @@ class TrustedContactsRepository(
                 contacts = _contacts.value + trustedContact
             )
 
+            appStatusRepository.updateContactsLinked()
+
             trustedContact
         }
     }
@@ -94,6 +98,8 @@ class TrustedContactsRepository(
             updateContacts(
                 contacts = ensurePrimaryContact(remainingContacts)
             )
+
+            appStatusRepository.updateContactsLinked()
         }
     }
 
