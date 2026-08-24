@@ -1,6 +1,59 @@
 <resources>
     <string name="app_name">SafeTap</string>
 
+    <!-- Bottom Navigation Bar -->
+    <string name="nav_home">Start</string>
+    <string name="nav_sos">SOS</string>
+    <string name="nav_contacts">Kontakte</string>
+    <string name="nav_settings">Einstellungen</string>
+
+    <!-- Home Screen -->
+    <string name="home_greeting">Hallo, %1$s 👋</string>
+    <string name="home_protected_subtitle">Sie sind durch SafeTap geschützt</string>
+    <string name="home_status_ready">SafeTap Bereit</string>
+    <string name="home_status_online">ONLINE</string>
+    <string name="home_status_desc">Hohe GPS-Genauigkeit • 3 Kontakte synchronisiert</string>
+    <string name="home_emergency_assistance">NOTFALLHILFE</string>
+    <string name="home_send_sos">SOS SENDEN</string>
+    <string name="home_tap_for_emergency">FÜR NOTFALL TIPPEN</string>
+    <string name="home_quick_actions">Schnellaktionen</string>
+    <string name="home_instant_access">Sofortzugriff</string>
+    <string name="home_qa_emergency_call">Notruf</string>
+    <string name="home_qa_emergency_call_sub">112 / 911 wählen</string>
+    <string name="home_qa_badge_fast">Schnell</string>
+    <string name="home_qa_trusted_contacts">Vertrauenskontakte</string>
+    <string name="home_qa_trusted_contacts_sub">Kontakte verwalten</string>
+    <string name="home_qa_badge_linked">3 Verknüpft</string>
+    <string name="home_qa_live_location">Live-Standort</string>
+    <string name="home_qa_live_location_sub">GPS-Tracking</string>
+    <string name="home_qa_badge_active">Aktiv</string>
+    <string name="home_qa_fake_call">Täuschungsanruf</string>
+    <string name="home_qa_fake_call_sub">Sicherheits-Tarnung</string>
+    <string name="home_recent_activity">Letzte Aktivität</string>
+    <string name="home_act_safetap_protected">SafeTap Geschützt</string>
+    <string name="home_act_safetap_protected_desc">Hintergrundschutz aktiv und einsatzbereit</string>
+    <string name="home_act_just_now">Gerade eben</string>
+    <string name="home_act_location_synced">Standort Synchronisiert</string>
+    <string name="home_act_location_synced_desc">GPS-Fix mit 5m Genauigkeit hergestellt</string>
+    <string name="home_act_12m_ago">Vor 12 Min.</string>
+    <string name="home_act_contacts_linked">3 Kontakte Verknüpft</string>
+    <string name="home_act_contacts_linked_desc">Notfall-SMS-Übertragung bereit</string>
+    <string name="home_act_1h_ago">Vor 1 Std.</string>
+    <string name="home_dialog_emergency_call_title">Notruf</string>
+    <string name="home_dialog_emergency_call_desc">Möchten Sie sofort den Notruf (112 / 911) wählen?</string>
+    <string name="home_dialog_call_911">112 Anrufen</string>
+    <string name="home_dialog_live_location_title">Live-Standortfreigabe</string>
+    <string name="home_dialog_live_location_desc">Ihr aktueller Standort wird für schnelle SOS-Benachrichtigungen überwacht.</string>
+    <string name="home_dialog_gps_active">Hochpräzises GPS Aktiv</string>
+    <string name="home_dialog_open_sos">SOS-Modus öffnen</string>
+    <string name="home_dialog_fake_call_title">Täuschungsanruf-Tarnung</string>
+    <string name="home_dialog_fake_call_countdown_title">Eingehender Anruf in 5s...</string>
+    <string name="home_dialog_fake_call_desc">Lösen Sie einen täuschend echten Anruf aus, um sich unauffällig aus unangenehmen Situationen zu entfernen.</string>
+    <string name="home_dialog_fake_call_countdown_desc">Bleiben Sie ruhig. Ihr Telefon wird in Kürze mit einem simulierten Notruf klingeln.</string>
+    <string name="home_dialog_trigger_fake_call">Täuschungsanruf Auslösen</string>
+    <string name="home_dialog_ringing">Es klingelt...</string>
+    <string name="dismiss">Schließen</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Einstellungen</string>
     <string name="settings_subtitle">Präferenzen, Notfallkonfigurationen &amp; Profil</string>

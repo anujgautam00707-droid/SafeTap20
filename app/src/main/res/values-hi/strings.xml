@@ -1,6 +1,59 @@
 <resources>
     <string name="app_name">SafeTap</string>
 
+    <!-- Bottom Navigation Bar -->
+    <string name="nav_home">होम</string>
+    <string name="nav_sos">SOS</string>
+    <string name="nav_contacts">संपर्क</string>
+    <string name="nav_settings">सेटिंग्स</string>
+
+    <!-- Home Screen -->
+    <string name="home_greeting">नमस्ते, %1$s 👋</string>
+    <string name="home_protected_subtitle">आप SafeTap द्वारा सुरक्षित हैं</string>
+    <string name="home_status_ready">SafeTap तैयार है</string>
+    <string name="home_status_online">ऑनलाइन</string>
+    <string name="home_status_desc">GPS उच्च सटीकता • 3 संपर्क सिंक किए गए</string>
+    <string name="home_emergency_assistance">आपातकालीन सहायता</string>
+    <string name="home_send_sos">SOS भेजें</string>
+    <string name="home_tap_for_emergency">आपातकाल के लिए टैप करें</string>
+    <string name="home_quick_actions">त्वरित क्रियाएं</string>
+    <string name="home_instant_access">त्वरित पहुंच</string>
+    <string name="home_qa_emergency_call">आपातकालीन कॉल</string>
+    <string name="home_qa_emergency_call_sub">112 / 100 डायल करें</string>
+    <string name="home_qa_badge_fast">फास्ट</string>
+    <string name="home_qa_trusted_contacts">विश्वसनीय संपर्क</string>
+    <string name="home_qa_trusted_contacts_sub">संपर्क प्रबंधित करें</string>
+    <string name="home_qa_badge_linked">3 लिंक किए गए</string>
+    <string name="home_qa_live_location">लाइव लोकेशन</string>
+    <string name="home_qa_live_location_sub">GPS ट्रैकिंग</string>
+    <string name="home_qa_badge_active">सक्रिय</string>
+    <string name="home_qa_fake_call">फ़ेक कॉल</string>
+    <string name="home_qa_fake_call_sub">सुरक्षा कवच</string>
+    <string name="home_recent_activity">हाल की गतिविधि</string>
+    <string name="home_act_safetap_protected">SafeTap सुरक्षित</string>
+    <string name="home_act_safetap_protected_desc">बैकग्राउंड सुरक्षा सक्रिय और तैयार</string>
+    <string name="home_act_just_now">अभी</string>
+    <string name="home_act_location_synced">लोकेशन सिंक्रनाइज़</string>
+    <string name="home_act_location_synced_desc">5m सटीकता के साथ GPS लॉक स्थापित</string>
+    <string name="home_act_12m_ago">12 मिनट पहले</string>
+    <string name="home_act_contacts_linked">3 संपर्क लिंक किए गए</string>
+    <string name="home_act_contacts_linked_desc">आपातकालीन SMS प्रसारण तैयार</string>
+    <string name="home_act_1h_ago">1 घंटा पहले</string>
+    <string name="home_dialog_emergency_call_title">आपातकालीन कॉल</string>
+    <string name="home_dialog_emergency_call_desc">क्या आप आपातकालीन सेवा (112 / 100 / 911) पर तुरंत कॉल करना चाहते हैं?</string>
+    <string name="home_dialog_call_911">कॉल करें</string>
+    <string name="home_dialog_live_location_title">लाइव लोकेशन शेयरिंग</string>
+    <string name="home_dialog_live_location_desc">त्वरित SOS प्रसारण के लिए आपकी वर्तमान लोकेशन पर लगातार नज़र रखी जाती है।</string>
+    <string name="home_dialog_gps_active">उच्च सटीकता GPS सक्रिय</string>
+    <string name="home_dialog_open_sos">SOS मोड खोलें</string>
+    <string name="home_dialog_fake_call_title">फ़ेक कॉल</string>
+    <string name="home_dialog_fake_call_countdown_title">5 सेकंड में इनकमिंग कॉल...</string>
+    <string name="home_dialog_fake_call_desc">असहज परिस्थितियों से सुरक्षित रूप से निकलने के लिए एक नकली कॉल ट्रिगर करें।</string>
+    <string name="home_dialog_fake_call_countdown_desc">शांत रहें। थोड़ी देर में आपके फोन पर आपातकालीन कॉल की घंटी बजेगी।</string>
+    <string name="home_dialog_trigger_fake_call">फ़ेक कॉल ट्रिगर करें</string>
+    <string name="home_dialog_ringing">कॉल आ रही है...</string>
+    <string name="dismiss">खारिज करें</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">सेटिंग्स</string>
     <string name="settings_subtitle">प्राथमिकताएं, आपातकालीन कॉन्फ़िगरेशन और प्रोफ़ाइल</string>

@@ -1,6 +1,59 @@
 <resources>
     <string name="app_name">SafeTap</string>
 
+    <!-- Bottom Navigation Bar -->
+    <string name="nav_home">Accueil</string>
+    <string name="nav_sos">SOS</string>
+    <string name="nav_contacts">Contacts</string>
+    <string name="nav_settings">Paramètres</string>
+
+    <!-- Home Screen -->
+    <string name="home_greeting">Bonjour, %1$s 👋</string>
+    <string name="home_protected_subtitle">Vous êtes protégé par SafeTap</string>
+    <string name="home_status_ready">SafeTap Prêt</string>
+    <string name="home_status_online">EN LIGNE</string>
+    <string name="home_status_desc">Haute Précision GPS • 3 Contacts Synchronisés</string>
+    <string name="home_emergency_assistance">ASSISTANCE D\'URGENCE</string>
+    <string name="home_send_sos">ENVOYER SOS</string>
+    <string name="home_tap_for_emergency">TOUCHER POUR URGENCE</string>
+    <string name="home_quick_actions">Actions Rapides</string>
+    <string name="home_instant_access">Accès Instantané</string>
+    <string name="home_qa_emergency_call">Appel d\'Urgence</string>
+    <string name="home_qa_emergency_call_sub">Composer le 112 / 911</string>
+    <string name="home_qa_badge_fast">Rapide</string>
+    <string name="home_qa_trusted_contacts">Contacts de Confiance</string>
+    <string name="home_qa_trusted_contacts_sub">Gérer les alliés</string>
+    <string name="home_qa_badge_linked">3 Liés</string>
+    <string name="home_qa_live_location">Position en Direct</string>
+    <string name="home_qa_live_location_sub">Suivi GPS</string>
+    <string name="home_qa_badge_active">Actif</string>
+    <string name="home_qa_fake_call">Faux Appel</string>
+    <string name="home_qa_fake_call_sub">Feinte de sécurité</string>
+    <string name="home_recent_activity">Activité Récente</string>
+    <string name="home_act_safetap_protected">SafeTap Protégé</string>
+    <string name="home_act_safetap_protected_desc">Protection en arrière-plan active et prête</string>
+    <string name="home_act_just_now">À l\'instant</string>
+    <string name="home_act_location_synced">Position Synchronisée</string>
+    <string name="home_act_location_synced_desc">Verrouillage GPS établi avec précision 5m</string>
+    <string name="home_act_12m_ago">Il y a 12 min</string>
+    <string name="home_act_contacts_linked">3 Contacts Liés</string>
+    <string name="home_act_contacts_linked_desc">Alerte SMS d\'urgence prête</string>
+    <string name="home_act_1h_ago">Il y a 1 h</string>
+    <string name="home_dialog_emergency_call_title">Appel d\'Urgence</string>
+    <string name="home_dialog_emergency_call_desc">Voulez-vous composer le service d\'urgence (112 / 911) immédiatement ?</string>
+    <string name="home_dialog_call_911">Appeler le 112</string>
+    <string name="home_dialog_live_location_title">Partage de Position en Direct</string>
+    <string name="home_dialog_live_location_desc">Votre position actuelle est surveillée en continu pour une alerte SOS rapide.</string>
+    <string name="home_dialog_gps_active">GPS Haute Précision Actif</string>
+    <string name="home_dialog_open_sos">Ouvrir le Mode SOS</string>
+    <string name="home_dialog_fake_call_title">Feinte de Faux Appel</string>
+    <string name="home_dialog_fake_call_countdown_title">Appel entrant dans 5s...</string>
+    <string name="home_dialog_fake_call_desc">Déclenchez un faux appel réaliste pour vous extirper discrètement d\'une situation inconfortable.</string>
+    <string name="home_dialog_fake_call_countdown_desc">Restez calme. Votre téléphone sonnera sous peu avec un appel d\'urgence simulé.</string>
+    <string name="home_dialog_trigger_fake_call">Déclencher le Faux Appel</string>
+    <string name="home_dialog_ringing">Sonnerie...</string>
+    <string name="dismiss">Ignorer</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Paramètres</string>
     <string name="settings_subtitle">Préférences, configurations d\'urgence et profil</string>

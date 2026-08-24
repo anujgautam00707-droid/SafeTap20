@@ -2,17 +2,14 @@ package com.safetap.app.ui.screens.home
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibility
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,11 +31,9 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PhoneInTalk
-import androidx.compose.material.icons.filled.PhoneMissed
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -46,9 +41,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -61,20 +54,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.safetap.app.R
 import com.safetap.app.di.SafeTapViewModelFactory
 import com.safetap.app.ui.components.EmergencyPulseButton
 import com.safetap.app.ui.components.QuickActionCard
 import com.safetap.app.ui.theme.EmergencyRed
 import com.safetap.app.ui.theme.EmergencyRedContainer
-import com.safetap.app.ui.theme.EmergencyRedDark
 import com.safetap.app.ui.theme.EmergencyWhite
 import com.safetap.app.ui.theme.SafeGreen
 import com.safetap.app.ui.theme.SafeGreenContainer
@@ -83,9 +76,9 @@ import com.safetap.app.ui.theme.WarningAmber
 import com.safetap.app.ui.theme.WarningAmberContainer
 
 data class ActivityItem(
-    val title: String,
-    val description: String,
-    val timeAgo: String,
+    @StringRes val titleRes: Int,
+    @StringRes val descriptionRes: Int,
+    @StringRes val timeAgoRes: Int,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val iconColor: Color,
     val iconBgColor: Color
@@ -109,25 +102,25 @@ fun HomeScreen(
     val recentActivities = remember {
         listOf(
             ActivityItem(
-                title = "SafeTap Protected",
-                description = "Background protection active & ready",
-                timeAgo = "Just now",
+                titleRes = R.string.home_act_safetap_protected,
+                descriptionRes = R.string.home_act_safetap_protected_desc,
+                timeAgoRes = R.string.home_act_just_now,
                 icon = Icons.Filled.Shield,
                 iconColor = SafeGreen,
                 iconBgColor = SafeGreenContainer
             ),
             ActivityItem(
-                title = "Location Synchronized",
-                description = "GPS lock established with 5m accuracy",
-                timeAgo = "12m ago",
+                titleRes = R.string.home_act_location_synced,
+                descriptionRes = R.string.home_act_location_synced_desc,
+                timeAgoRes = R.string.home_act_12m_ago,
                 icon = Icons.Outlined.MyLocation,
                 iconColor = Color(0xFF1976D2),
                 iconBgColor = Color(0xFFE3F2FD)
             ),
             ActivityItem(
-                title = "3 Contacts Linked",
-                description = "Emergency SMS broadcast ready",
-                timeAgo = "1h ago",
+                titleRes = R.string.home_act_contacts_linked,
+                descriptionRes = R.string.home_act_contacts_linked_desc,
+                timeAgoRes = R.string.home_act_1h_ago,
                 icon = Icons.Filled.People,
                 iconColor = Color(0xFF7B1FA2),
                 iconBgColor = Color(0xFFF3E5F5)
@@ -149,12 +142,12 @@ fun HomeScreen(
             },
             title = {
                 Text(
-                    text = "Emergency Call",
+                    text = stringResource(R.string.home_dialog_emergency_call_title),
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
-                Text("Do you want to dial emergency dispatch (911 / 112) immediately?")
+                Text(stringResource(R.string.home_dialog_emergency_call_desc))
             },
             confirmButton = {
                 Button(
@@ -167,12 +160,12 @@ fun HomeScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = EmergencyRed)
                 ) {
-                    Text("Call 911", color = EmergencyWhite)
+                    Text(stringResource(R.string.home_dialog_call_911), color = EmergencyWhite)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEmergencyCallDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -191,11 +184,11 @@ fun HomeScreen(
                 )
             },
             title = {
-                Text("Live Location Sharing", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.home_dialog_live_location_title), fontWeight = FontWeight.Bold)
             },
             text = {
                 Column {
-                    Text("Your current location is continuously monitored for rapid SOS dispatch.")
+                    Text(stringResource(R.string.home_dialog_live_location_desc))
                     Spacer(modifier = Modifier.height(8.dp))
                     Surface(
                         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -215,7 +208,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "High Precision GPS Active",
+                                text = stringResource(R.string.home_dialog_gps_active),
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -230,12 +223,12 @@ fun HomeScreen(
                         onOpenSos()
                     }
                 ) {
-                    Text("Open SOS Mode")
+                    Text(stringResource(R.string.home_dialog_open_sos))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLiveLocationDialog = false }) {
-                    Text("Close")
+                    Text(stringResource(R.string.close))
                 }
             }
         )
@@ -258,16 +251,19 @@ fun HomeScreen(
             },
             title = {
                 Text(
-                    text = if (fakeCallCountdown) "Incoming Call in 5s..." else "Fake Call Disguise",
+                    text = stringResource(
+                        if (fakeCallCountdown) R.string.home_dialog_fake_call_countdown_title
+                        else R.string.home_dialog_fake_call_title
+                    ),
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Text(
-                    if (fakeCallCountdown)
-                        "Stay calm. Your phone will ring with a simulated emergency escape call shortly."
-                    else
-                        "Trigger a realistic incoming call to help you safely excuse yourself from uncomfortable situations."
+                    stringResource(
+                        if (fakeCallCountdown) R.string.home_dialog_fake_call_countdown_desc
+                        else R.string.home_dialog_fake_call_desc
+                    )
                 )
             },
             confirmButton = {
@@ -277,7 +273,13 @@ fun HomeScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = WarningAmber)
                 ) {
-                    Text(if (fakeCallCountdown) "Ringing..." else "Trigger Fake Call", color = EmergencyWhite)
+                    Text(
+                        stringResource(
+                            if (fakeCallCountdown) R.string.home_dialog_ringing
+                            else R.string.home_dialog_trigger_fake_call
+                        ),
+                        color = EmergencyWhite
+                    )
                 }
             },
             dismissButton = {
@@ -285,7 +287,7 @@ fun HomeScreen(
                     showFakeCallModal = false
                     fakeCallCountdown = false
                 }) {
-                    Text("Dismiss")
+                    Text(stringResource(R.string.dismiss))
                 }
             }
         )
@@ -309,13 +311,13 @@ fun HomeScreen(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Hello, ${uiState.userDisplayName} 👋",
+                    text = stringResource(R.string.home_greeting, uiState.userDisplayName),
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "You are protected by SafeTap",
+                    text = stringResource(R.string.home_protected_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -346,7 +348,7 @@ fun HomeScreen(
 
         // Main Animated Large SOS Button
         Text(
-            text = "EMERGENCY ASSISTANCE",
+            text = stringResource(R.string.home_emergency_assistance),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -357,8 +359,8 @@ fun HomeScreen(
 
         EmergencyPulseButton(
             onClick = onOpenSos,
-            title = "SEND SOS",
-            subtitle = "TAP FOR EMERGENCY",
+            title = stringResource(R.string.home_send_sos),
+            subtitle = stringResource(R.string.home_tap_for_emergency),
             size = 175.dp
         )
 
@@ -371,13 +373,13 @@ fun HomeScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Quick Actions",
+                text = stringResource(R.string.home_quick_actions),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                text = "Instant Access",
+                text = stringResource(R.string.home_instant_access),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -391,25 +393,25 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             QuickActionCard(
-                title = "Emergency Call",
-                subtitle = "Dial 911 / 112",
+                title = stringResource(R.string.home_qa_emergency_call),
+                subtitle = stringResource(R.string.home_qa_emergency_call_sub),
                 icon = Icons.Filled.Call,
                 iconTint = EmergencyRed,
                 iconBackgroundColor = EmergencyRedContainer,
                 onClick = { showEmergencyCallDialog = true },
                 modifier = Modifier.weight(1f),
-                badgeText = "Fast"
+                badgeText = stringResource(R.string.home_qa_badge_fast)
             )
 
             QuickActionCard(
-                title = "Trusted Contacts",
-                subtitle = "Manage allies",
+                title = stringResource(R.string.home_qa_trusted_contacts),
+                subtitle = stringResource(R.string.home_qa_trusted_contacts_sub),
                 icon = Icons.Filled.People,
                 iconTint = Color(0xFF7B1FA2),
                 iconBackgroundColor = Color(0xFFF3E5F5),
                 onClick = onNavigateToContacts,
                 modifier = Modifier.weight(1f),
-                badgeText = "3 Linked"
+                badgeText = stringResource(R.string.home_qa_badge_linked)
             )
         }
 
@@ -420,19 +422,19 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             QuickActionCard(
-                title = "Live Location",
-                subtitle = "GPS Tracking",
+                title = stringResource(R.string.home_qa_live_location),
+                subtitle = stringResource(R.string.home_qa_live_location_sub),
                 icon = Icons.Filled.LocationOn,
                 iconTint = SafeGreen,
                 iconBackgroundColor = SafeGreenContainer,
                 onClick = { showLiveLocationDialog = true },
                 modifier = Modifier.weight(1f),
-                badgeText = "Active"
+                badgeText = stringResource(R.string.home_qa_badge_active)
             )
 
             QuickActionCard(
-                title = "Fake Call",
-                subtitle = "Safety disguise",
+                title = stringResource(R.string.home_qa_fake_call),
+                subtitle = stringResource(R.string.home_qa_fake_call_sub),
                 icon = Icons.Filled.PhoneInTalk,
                 iconTint = WarningAmber,
                 iconBackgroundColor = WarningAmberContainer,
@@ -458,7 +460,7 @@ fun HomeScreen(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Recent Activity",
+                    text = stringResource(R.string.home_recent_activity),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -507,20 +509,20 @@ fun HomeScreen(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = activity.title,
+                                text = stringResource(activity.titleRes),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = activity.description,
+                                text = stringResource(activity.descriptionRes),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
                         Text(
-                            text = activity.timeAgo,
+                            text = stringResource(activity.timeAgoRes),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                         )
@@ -600,7 +602,7 @@ private fun StatusReadyBanner() {
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "SafeTap Ready",
+                        text = stringResource(R.string.home_status_ready),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = SafeGreen
@@ -613,7 +615,7 @@ private fun StatusReadyBanner() {
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "ONLINE",
+                            text = stringResource(R.string.home_status_online),
                             color = SafeGreen,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Black
@@ -622,7 +624,7 @@ private fun StatusReadyBanner() {
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "GPS High Accuracy • 3 Contacts Synced",
+                    text = stringResource(R.string.home_status_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = SafeGreen.copy(alpha = 0.85f)
                 )
