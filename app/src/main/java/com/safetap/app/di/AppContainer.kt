@@ -6,6 +6,9 @@ import com.safetap.app.data.auth.FirebaseAuthManager
 import com.safetap.app.data.contacts.TrustedContactsRepository
 import com.google.firebase.database.FirebaseDatabase
 import com.safetap.app.data.sos.FirebaseSosRemoteDataSource
+import com.safetap.app.data.status.AppStatusRepository
+import com.safetap.app.data.sos.FakeSosRemoteDataSource
+import com.safetap.app.data.sos.LocalSosDataSource
 import com.safetap.app.data.sos.SosRemoteDataSource
 import com.safetap.app.data.sos.services.DefaultBatteryProvider
 import com.safetap.app.data.sos.services.DefaultEmergencyCallManager
@@ -33,6 +36,9 @@ object AppContainer {
     lateinit var trustedContactsRepository: TrustedContactsRepository
         private set
 
+    lateinit var appStatusRepository: AppStatusRepository
+        private set
+
     lateinit var permissionChecker: PermissionChecker
         private set
 
@@ -57,6 +63,9 @@ object AppContainer {
     lateinit var sosRemoteDataSource: SosRemoteDataSource
         private set
 
+    lateinit var localSosDataSource: LocalSosDataSource
+        private set
+
     lateinit var sosCoordinator: SosCoordinator
         private set
 
@@ -64,6 +73,7 @@ object AppContainer {
         get() =
             ::authRepository.isInitialized &&
                     ::trustedContactsRepository.isInitialized &&
+                    ::appStatusRepository.isInitialized &&
                     ::emergencySmsSender.isInitialized &&
                     ::locationTrackingManager.isInitialized &&
                     ::sosCoordinator.isInitialized
@@ -86,8 +96,14 @@ object AppContainer {
             FirebaseDatabase.getInstance(RTDB_URL).setPersistenceEnabled(true)
         }
 
+        appStatusRepository =
+            AppStatusRepository(appContext)
+
         trustedContactsRepository =
-            TrustedContactsRepository(appContext)
+            TrustedContactsRepository(
+                context = appContext,
+                appStatusRepository = appStatusRepository
+            )
 
         permissionChecker =
             DefaultPermissionChecker(appContext)
@@ -95,7 +111,8 @@ object AppContainer {
         locationProvider =
             DefaultLocationProvider(
                 context = appContext,
-                permissionChecker = permissionChecker
+                permissionChecker = permissionChecker,
+                appStatusRepository = appStatusRepository
             )
 
         batteryProvider =
@@ -121,6 +138,9 @@ object AppContainer {
                 database = FirebaseDatabase.getInstance(RTDB_URL)
             )
 
+        localSosDataSource =
+            LocalSosDataSource(appContext)
+
         sosCoordinator = SosCoordinator(
             permissionChecker = permissionChecker,
             locationProvider = locationProvider,
@@ -130,7 +150,9 @@ object AppContainer {
             emergencySmsSender = emergencySmsSender,
             trustedContactsRepository = trustedContactsRepository,
             remoteDataSource = sosRemoteDataSource,
-            locationTrackingManager = locationTrackingManager
+            locationTrackingManager = locationTrackingManager,
+            appStatusRepository = appStatusRepository,
+            localSosDataSource = localSosDataSource
         )
     }
 }

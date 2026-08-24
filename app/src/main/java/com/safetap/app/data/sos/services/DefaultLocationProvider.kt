@@ -8,6 +8,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.os.CancellationSignal
+import com.safetap.app.data.status.AppStatusRepository
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -25,7 +26,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 class DefaultLocationProvider(
     private val context: Context,
-    private val permissionChecker: PermissionChecker
+    private val permissionChecker: PermissionChecker,
+    private val appStatusRepository: AppStatusRepository
 ) : LocationProvider {
 
     private val fusedLocationClient: FusedLocationProviderClient by lazy {
@@ -85,6 +87,12 @@ class DefaultLocationProvider(
                         ) { location: Location? ->
                             if (continuation.isActive) {
                                 continuation.resume(location?.toLocationResult(isLastKnown = false))
+                                if (location != null) {
+                                    appStatusRepository.updateLocationSynchronized()
+                                    continuation.resume(location.toLocationResult(isLastKnown = false))
+                                } else {
+                                    continuation.resume(null)
+                                }
                             }
                         }
                     } catch (e: Exception) {
@@ -97,6 +105,7 @@ class DefaultLocationProvider(
                         override fun onLocationChanged(location: Location) {
                             lm.removeUpdates(this)
                             if (continuation.isActive) {
+                                appStatusRepository.updateLocationSynchronized()
                                 continuation.resume(location.toLocationResult(isLastKnown = false))
                             }
                         }

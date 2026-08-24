@@ -1,6 +1,7 @@
 package com.safetap.app.data.contacts
 
 import android.content.Context
+import com.safetap.app.data.status.AppStatusRepository
 import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,20 +18,16 @@ data class TrustedContact(
 )
 
 class TrustedContactsRepository(
-    private val preferences: android.content.SharedPreferences? = null,
-    initialContacts: List<TrustedContact> = emptyList()
+    context: Context,
+    private val appStatusRepository: AppStatusRepository
 ) {
 
-    constructor(context: Context) : this(
-        preferences = context.applicationContext.getSharedPreferences(
-            PREFERENCES_NAME,
-            Context.MODE_PRIVATE
-        )
+    private val preferences = context.applicationContext.getSharedPreferences(
+        PREFERENCES_NAME,
+        Context.MODE_PRIVATE
     )
 
-    private val _contacts = MutableStateFlow(
-        preferences?.let { loadContacts() } ?: initialContacts
-    )
+    private val _contacts = MutableStateFlow(loadContacts())
 
     val contacts: StateFlow<List<TrustedContact>> =
         _contacts.asStateFlow()
@@ -48,16 +45,10 @@ class TrustedContactsRepository(
             val trimmedName = name.trim()
             val normalizedPhone = normalizePhoneNumber(phone)
 
-            require(trimmedName.isNotEmpty()) {
-                "Contact name is required."
-            }
+            validateContactData(trimmedName, normalizedPhone)
 
-            require(
-                _contacts.value.none { contact ->
-                    contact.phone == normalizedPhone
-                }
-            ) {
-                "A contact with this phone number already exists."
+            if (_contacts.value.any { it.phone == normalizedPhone }) {
+                throw IllegalArgumentException("A contact with this phone number already exists.")
             }
 
             val trustedContact = TrustedContact(
@@ -73,7 +64,66 @@ class TrustedContactsRepository(
                 contacts = _contacts.value + trustedContact
             )
 
+            appStatusRepository.updateContactsLinked()
+
             trustedContact
+        }
+    }
+
+    @Synchronized
+    fun updateContact(
+        updatedContact: TrustedContact
+    ): Result<TrustedContact> {
+        return runCatching {
+            val trimmedName = updatedContact.name.trim()
+            val normalizedPhone = normalizePhoneNumber(updatedContact.phone)
+
+            validateContactData(trimmedName, normalizedPhone)
+
+            val existingContacts = _contacts.value
+            
+            if (existingContacts.none { it.id == updatedContact.id }) {
+                throw NoSuchElementException("Trusted contact was not found.")
+            }
+
+            if (existingContacts.any { it.id != updatedContact.id && it.phone == normalizedPhone }) {
+                throw IllegalArgumentException("Another contact with this phone number already exists.")
+            }
+
+            val contactToUpdate = updatedContact.copy(
+                name = trimmedName,
+                relationship = updatedContact.relationship.trim().ifBlank {
+                    DEFAULT_RELATIONSHIP
+                },
+                phone = normalizedPhone
+            )
+
+            updateContacts(
+                contacts = existingContacts.map { contact ->
+                    if (contact.id == updatedContact.id) contactToUpdate else contact
+                }
+            )
+
+            contactToUpdate
+        }
+    }
+
+    @Synchronized
+    fun setPrimaryContact(
+        contactId: String
+    ): Result<Unit> {
+        return runCatching {
+            val existingContacts = _contacts.value
+
+            if (existingContacts.none { it.id == contactId }) {
+                throw NoSuchElementException("Trusted contact was not found.")
+            }
+
+            updateContacts(
+                contacts = existingContacts.map { contact ->
+                    contact.copy(isPrimary = contact.id == contactId)
+                }
+            )
         }
     }
 
@@ -99,6 +149,8 @@ class TrustedContactsRepository(
             updateContacts(
                 contacts = ensurePrimaryContact(remainingContacts)
             )
+
+            appStatusRepository.updateContactsLinked()
         }
     }
 
@@ -131,7 +183,7 @@ class TrustedContactsRepository(
     }
 
     private fun loadContacts(): List<TrustedContact> {
-        val storedContacts = preferences?.getString(
+        val storedContacts = preferences.getString(
             CONTACTS_KEY,
             null
         ) ?: return emptyList()
@@ -207,12 +259,12 @@ class TrustedContactsRepository(
         }
 
         preferences
-            ?.edit()
-            ?.putString(
+            .edit()
+            .putString(
                 CONTACTS_KEY,
                 contactsArray.toString()
             )
-            ?.apply()
+            .apply()
     }
 
     private fun normalizePhoneNumber(
@@ -224,13 +276,19 @@ class TrustedContactsRepository(
         require(
             digits.length in MINIMUM_PHONE_DIGITS..MAXIMUM_PHONE_DIGITS
         ) {
-            "Enter a valid phone number."
+            "Enter a valid phone number (7-15 digits)."
         }
 
         return if (trimmedPhone.startsWith("+")) {
             "+$digits"
         } else {
             digits
+        }
+    }
+
+    private fun validateContactData(name: String, phone: String) {
+        require(name.isNotEmpty()) {
+            "Contact name is required."
         }
     }
 

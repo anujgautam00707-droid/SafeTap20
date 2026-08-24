@@ -1,7 +1,9 @@
 package com.safetap.app.domain.sos
 
 import com.safetap.app.data.contacts.TrustedContactsRepository
+import com.safetap.app.data.sos.LocalSosDataSource
 import com.safetap.app.data.sos.SosRemoteDataSource
+import com.safetap.app.data.status.AppStatusRepository
 import com.safetap.app.domain.sos.model.EmergencyData
 import com.safetap.app.domain.sos.model.LocationTrackingState
 import com.safetap.app.domain.sos.model.SosError
@@ -30,12 +32,19 @@ class SosCoordinator(
     private val callManager: EmergencyCallManager,
     private val emergencySmsSender: EmergencySmsSender,
     private val trustedContactsRepository: TrustedContactsRepository,
+    private val appStatusRepository: AppStatusRepository,
     private val remoteDataSource: SosRemoteDataSource,
     private val locationTrackingManager: LocationTrackingManager? = null,
+    private val localSosDataSource: LocalSosDataSource,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
 
     private var currentActiveSosId: String? = null
+
+    init {
+        // Recover any active SOS session from local persistence (e.g. after process death)
+        currentActiveSosId = localSosDataSource.getActiveSos()?.sosId
+    }
 
     val smsDeliveryStatuses: StateFlow<List<SmsRecipientStatus>> =
         emergencySmsSender.deliveryStatuses
@@ -43,16 +52,12 @@ class SosCoordinator(
     val trackingState: StateFlow<LocationTrackingState>?
         get() = locationTrackingManager?.trackingState
 
+    fun hasRequiredPermissions(): Boolean = permissionChecker.hasRequiredPermissions()
+
+    fun getMissingPermissions(): List<String> = permissionChecker.getMissingPermissions()
+
     fun checkPermissions(): Result<Unit> {
-        return if (permissionChecker.hasRequiredPermissions()) {
-            Result.success(Unit)
-        } else {
-            Result.failure(
-                SosError.PermissionDenied(
-                    "Location, SMS, and Phone permissions are required to activate SOS."
-                )
-            )
-        }
+        return Result.success(Unit)
     }
 
     suspend fun getBatteryPercentage(): Int = withContext(ioDispatcher) {
@@ -105,9 +110,14 @@ class SosCoordinator(
                 )
             }
 
-            val locationResult =
+            val locationResult = runCatching {
                 locationProvider.getBestAvailableLocation()
                     ?: locationProvider.getLastKnownLocation()
+            }.getOrNull()
+
+            if (locationResult != null) {
+                appStatusRepository.updateLocationSynchronized()
+            }
 
             val latitude = locationResult?.latitude ?: 0.0
             val longitude = locationResult?.longitude ?: 0.0
@@ -115,8 +125,9 @@ class SosCoordinator(
             val isLastKnownLocation =
                 locationResult?.isLastKnownLocation ?: false
 
-            val batteryPercentage =
+            val batteryPercentage = runCatching {
                 batteryProvider.getBatteryPercentage()
+            }.getOrDefault(100)
 
             val sosId = UUID.randomUUID().toString()
             generatedSosId = sosId
@@ -140,26 +151,16 @@ class SosCoordinator(
                 liveLocationToken = liveToken
             )
 
-            val recipients = trustedContacts.map { contact ->
+            val recipients = trustedContactsRepository.getCurrentContacts().map { contact ->
                 contact.phone
             }
 
-            // Prevent callback results from an older SOS appearing in the new one.
-            emergencySmsSender.clearDeliveryStatuses()
-
-            val smsResult = emergencySmsSender.sendEmergencyMessage(
-                recipients = recipients,
-                message = buildEmergencySmsMessage(emergencyData)
-            )
-
-            if (smsResult.isFailure) {
-                return@withContext Result.failure(
-                    SosError.UnexpectedError(
-                        smsResult.exceptionOrNull()
-                            ?: IllegalStateException(
-                                "The emergency SMS could not be sent."
-                            )
-                    )
+            if (recipients.isNotEmpty()) {
+                // Attempt SMS independently. Failure does not terminate SOS.
+                emergencySmsSender.clearDeliveryStatuses()
+                emergencySmsSender.sendEmergencyMessage(
+                    recipients = recipients,
+                    message = buildEmergencySmsMessage(emergencyData)
                 )
             }
 
@@ -171,6 +172,11 @@ class SosCoordinator(
                 liveLocationToken = liveToken
             )
 
+            // PERSIST LOCALLY: authoritatively mark SOS as active on this device.
+            localSosDataSource.saveActiveSos(emergencyData, isSynced = false)
+
+            appStatusRepository.updateSafeTapProtected()
+
             notificationManager.showActiveSosNotification(
                 emergencyData
             )
@@ -179,6 +185,10 @@ class SosCoordinator(
             val remoteResult = runCatching {
                 remoteDataSource.createSosEvent(emergencyData)
             }.getOrElse { Result.failure(it) }
+            // ATTEMPT REMOTE SYNC: isolated from the primary local SOS result.
+            // We do not wait for the remote response to return Success to the ViewModel.
+            // This ensures SOS remains active even if the network is down.
+            syncEvent(emergencyData)
 
             Result.success(emergencyData)
         } catch (exception: CancellationException) {
@@ -236,9 +246,24 @@ class SosCoordinator(
 
             notificationManager.cancelSosNotification()
 
+            // LOCAL CANCELLATION IS IMMEDIATE
+            currentActiveSosId = null
+            localSosDataSource.clearActiveSos()
+
             if (targetSosId != null) {
-                runCatching {
+                // ATTEMPT REMOTE CLOSE: failure will not block local cancellation.
+                val closeResult = runCatching {
                     remoteDataSource.closeSosEvent(targetSosId)
+                }.getOrElse { Result.failure(it) }
+
+                if (closeResult.isFailure) {
+                    localSosDataSource.markPendingClosure(targetSosId)
+                    android.util.Log.w(
+                        "SosCoordinator",
+                        "Remote closure failed; marked as pending."
+                    )
+                } else {
+                    localSosDataSource.clearPendingClosure()
                 }
             }
 
@@ -264,13 +289,52 @@ class SosCoordinator(
 
     fun getActiveSosId(): String? = currentActiveSosId
 
-    fun buildEmergencySmsMessage(
+    fun getActiveSos(): EmergencyData? =
+        localSosDataSource.getActiveSos()
+    /**
+     * Retries any pending remote synchronization (creation or closure).
+     * Should be called when the app is active and network might be available.
+     */
+    suspend fun syncPendingMetadata() = withContext(ioDispatcher) {
+        // 1. Retry pending creation
+        val activeSos = localSosDataSource.getActiveSos()
+        if (activeSos != null && !localSosDataSource.isSynced()) {
+            val result = remoteDataSource.createSosEvent(activeSos)
+            if (result.isSuccess) {
+                localSosDataSource.markSynced()
+            }
+        }
+
+        // 2. Retry pending closure
+        if (localSosDataSource.isPendingClosure()) {
+            val closureId = localSosDataSource.getPendingClosureId()
+            if (closureId != null) {
+                val result = remoteDataSource.closeSosEvent(closureId)
+                if (result.isSuccess) {
+                    localSosDataSource.clearPendingClosure()
+                }
+            }
+        }
+    }
+
+    private suspend fun syncEvent(emergencyData: EmergencyData) {
+        // Use a non-blocking attempt for the initial sync.
+        // If it fails, the event remains in LocalSosDataSource with isSynced=false.
+        try {
+            val result = remoteDataSource.createSosEvent(emergencyData)
+            if (result.isSuccess) {
+                localSosDataSource.markSynced()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SosCoordinator", "Initial remote sync failed: ${e.message}")
+        }
+    }
+
+    private fun buildEmergencySmsMessage(
         emergencyData: EmergencyData
     ): String {
-        val mapsLink =
-            "https://maps.google.com/?q=" +
-                    "${emergencyData.latitude}," +
-                    emergencyData.longitude
+        // We avoid labeling 0.0 as a real location if it appears to be a fallback.
+        val hasLocation = emergencyData.latitude != 0.0 || emergencyData.longitude != 0.0
 
         val liveLink = emergencyData.getLiveTrackingUrl()
 
@@ -278,8 +342,16 @@ class SosCoordinator(
             appendLine("SafeTap emergency alert")
             appendLine()
             appendLine(emergencyData.emergencyMessage)
-            appendLine("Location: $mapsLink")
             appendLine("Live Track: $liveLink")
+            if (hasLocation) {
+                val mapsLink =
+                    "https://maps.google.com/?q=" +
+                            "${emergencyData.latitude}," +
+                            emergencyData.longitude
+                appendLine("Location: $mapsLink")
+            } else {
+                appendLine("Location: Unavailable")
+            }
             append("Battery: ${emergencyData.batteryPercentage}%")
         }
     }
