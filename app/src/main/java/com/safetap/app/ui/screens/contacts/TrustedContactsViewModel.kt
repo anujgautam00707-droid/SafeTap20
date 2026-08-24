@@ -50,25 +50,33 @@ class TrustedContactsViewModel(
             phone = phone
         )
 
-        _uiState.update { currentState ->
-            currentState.copy(
-                errorMessage = result.exceptionOrNull()?.message
-            )
-        }
-
+        updateError(result.exceptionOrNull()?.message)
         return result.isSuccess
+    }
+
+    fun updateContact(contact: TrustedContact): Boolean {
+        val result = trustedContactsRepository.updateContact(contact)
+
+        updateError(result.exceptionOrNull()?.message)
+        return result.isSuccess
+    }
+
+    fun setPrimaryContact(contactId: String) {
+        val result = trustedContactsRepository.setPrimaryContact(contactId)
+        updateError(result.exceptionOrNull()?.message)
     }
 
     fun removeContact(contactId: String): Boolean {
         val result = trustedContactsRepository.removeContact(contactId)
 
-        _uiState.update { currentState ->
-            currentState.copy(
-                errorMessage = result.exceptionOrNull()?.message
-            )
-        }
-
+        updateError(result.exceptionOrNull()?.message)
         return result.isSuccess
+    }
+
+    private fun updateError(message: String?) {
+        _uiState.update { currentState ->
+            currentState.copy(errorMessage = message)
+        }
     }
 
     fun clearError() {
