@@ -92,6 +92,27 @@
     <string name="sos_card_battery_reading">État de la Batterie : Lecture...</string>
     <string name="sos_card_battery_desc">Lecture en temps réel de cet appareil</string>
 
+    <!-- Trusted Contacts Screen -->
+    <string name="contacts_title">Contacts de Confiance</string>
+    <string name="contacts_subtitle_empty">Aucun contact d\'urgence associé</string>
+    <string name="contacts_subtitle_count">%1$d contacts recevront des alertes SOS instantanées</string>
+    <string name="contacts_badge_allies">%1$d ALLIÉS</string>
+    <string name="contacts_info_banner">Les contacts reçoivent votre position en direct et l\'alerte immédiatement lors de l\'activation du SOS.</string>
+    <string name="contacts_fab_add">Ajouter un Contact</string>
+    <string name="contacts_dialog_add_title">Ajouter un Contact de Confiance</string>
+    <string name="contacts_dialog_add_desc">Ce contact recevra des alertes SOS, la position GPS en direct et des SMS en cas d\'urgence.</string>
+    <string name="contacts_dialog_full_name">Nom Complet *</string>
+    <string name="contacts_dialog_phone_number">Numéro de Téléphone *</string>
+    <string name="contacts_dialog_relationship">Lien de parenté (ex. Maman, Conjoint, Ami)</string>
+    <string name="contacts_dialog_save">Enregistrer le Contact</string>
+    <string name="contacts_dialog_remove_title">Supprimer le Contact ?</string>
+    <string name="contacts_dialog_remove_desc">Êtes-vous sûr de vouloir supprimer %1$s de vos contacts de confiance ?</string>
+    <string name="contacts_dialog_remove_btn">Supprimer</string>
+    <string name="contacts_empty_title">Aucun Contact de Confiance</string>
+    <string name="contacts_empty_desc">Ajoutez des amis, des membres de votre famille ou des soignants qui recevront des notifications instantanées et un suivi en direct chaque fois que vous déclenchez un SOS.</string>
+    <string name="contacts_empty_add_btn">Ajouter un Premier Contact</string>
+    <string name="contacts_empty_load_samples">Charger des Exemples de Contacts</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Paramètres</string>
     <string name="settings_subtitle">Préférences, configurations d\'urgence et profil</string>

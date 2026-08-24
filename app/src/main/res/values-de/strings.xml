@@ -92,6 +92,27 @@
     <string name="sos_card_battery_reading">Akkustand: Wird gelesen...</string>
     <string name="sos_card_battery_desc">Live-Messung von diesem Gerät</string>
 
+    <!-- Trusted Contacts Screen -->
+    <string name="contacts_title">Vertrauenskontakte</string>
+    <string name="contacts_subtitle_empty">Keine Notfallkontakte verknüpft</string>
+    <string name="contacts_subtitle_count">%1$d Kontakte erhalten sofortige SOS-Benachrichtigungen</string>
+    <string name="contacts_badge_allies">%1$d ALLIIERTE</string>
+    <string name="contacts_info_banner">Kontakte erhalten Ihren Live-Standort und Notfallübertragung sofort bei SOS-Auslösung.</string>
+    <string name="contacts_fab_add">Kontakt Hinzufügen</string>
+    <string name="contacts_dialog_add_title">Vertrauenskontakt Hinzufügen</string>
+    <string name="contacts_dialog_add_desc">Dieser Kontakt erhält im Notfall SOS-Alarme, Live-GPS-Standort und SMS.</string>
+    <string name="contacts_dialog_full_name">Vollständiger Name *</string>
+    <string name="contacts_dialog_phone_number">Telefonnummer *</string>
+    <string name="contacts_dialog_relationship">Beziehung (z. B. Mutter, Partner, Freund)</string>
+    <string name="contacts_dialog_save">Kontakt Speichern</string>
+    <string name="contacts_dialog_remove_title">Kontakt Entfernen?</string>
+    <string name="contacts_dialog_remove_desc">Möchten Sie %1$s wirklich aus Ihren Notfallkontakten entfernen?</string>
+    <string name="contacts_dialog_remove_btn">Entfernen</string>
+    <string name="contacts_empty_title">Noch Keine Vertrauenskontakte</string>
+    <string name="contacts_empty_desc">Fügen Sie Freunde, Familienmitglieder oder Betreuer hinzu, die bei jedem SOS-Auslöser sofortige Benachrichtigungen und Live-Tracking erhalten.</string>
+    <string name="contacts_empty_add_btn">Ersten Kontakt Hinzufügen</string>
+    <string name="contacts_empty_load_samples">Beispielkontakte Laden</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Einstellungen</string>
     <string name="settings_subtitle">Präferenzen, Notfallkonfigurationen &amp; Profil</string>

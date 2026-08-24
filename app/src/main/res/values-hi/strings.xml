@@ -92,6 +92,27 @@
     <string name="sos_card_battery_reading">बैटरी स्थिति: जांच जारी...</string>
     <string name="sos_card_battery_desc">इस डिवाइस से लाइव रीडिंग</string>
 
+    <!-- Trusted Contacts Screen -->
+    <string name="contacts_title">विश्वसनीय संपर्क</string>
+    <string name="contacts_subtitle_empty">कोई आपातकालीन संपर्क लिंक नहीं है</string>
+    <string name="contacts_subtitle_count">%1$d संपर्कों को तुरंत SOS अलर्ट प्राप्त होंगे</string>
+    <string name="contacts_badge_allies">%1$d सहयोगी</string>
+    <string name="contacts_info_banner">SOS सक्रिय होते ही संपर्कों को आपकी लाइव लोकेशन और अलर्ट प्रसारण तुरंत प्राप्त होता है।</string>
+    <string name="contacts_fab_add">संपर्क जोड़ें</string>
+    <string name="contacts_dialog_add_title">विश्वसनीय संपर्क जोड़ें</string>
+    <string name="contacts_dialog_add_desc">इस संपर्क को आपात स्थिति में SOS अलर्ट, लाइव GPS लोकेशन और SMS प्राप्त होंगे।</string>
+    <string name="contacts_dialog_full_name">पूरा नाम *</string>
+    <string name="contacts_dialog_phone_number">फ़ोन नंबर *</string>
+    <string name="contacts_dialog_relationship">संबंध (उदा. माँ, साथी, मित्र)</string>
+    <string name="contacts_dialog_save">संपर्क सहेजें</string>
+    <string name="contacts_dialog_remove_title">संपर्क हटाएं?</string>
+    <string name="contacts_dialog_remove_desc">क्या आप वाकई %1$s को अपने विश्वसनीय आपातकालीन संपर्कों से हटाना चाहते हैं?</string>
+    <string name="contacts_dialog_remove_btn">हटाएं</string>
+    <string name="contacts_empty_title">अभी तक कोई संपर्क नहीं</string>
+    <string name="contacts_empty_desc">उन मित्रों, परिवार के सदस्यों या देखभाल करने वालों को जोड़ें जिन्हें SOS ट्रिगर करने पर तुरंत सूचनाएं और लाइव ट्रैकिंग प्राप्त होगी।</string>
+    <string name="contacts_empty_add_btn">पहला संपर्क जोड़ें</string>
+    <string name="contacts_empty_load_samples">नमूना संपर्क लोड करें</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">सेटिंग्स</string>
     <string name="settings_subtitle">प्राथमिकताएं, आपातकालीन कॉन्फ़िगरेशन और प्रोफ़ाइल</string>

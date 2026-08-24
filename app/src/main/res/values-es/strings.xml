@@ -92,6 +92,27 @@
     <string name="sos_card_battery_reading">Estado de Batería: Leyendo...</string>
     <string name="sos_card_battery_desc">Lectura en tiempo real de este dispositivo</string>
 
+    <!-- Trusted Contacts Screen -->
+    <string name="contacts_title">Contactos de Confianza</string>
+    <string name="contacts_subtitle_empty">No hay contactos de emergencia vinculados</string>
+    <string name="contacts_subtitle_count">%1$d contactos recibirán alertas SOS instantáneas</string>
+    <string name="contacts_badge_allies">%1$d ALIADOS</string>
+    <string name="contacts_info_banner">Los contactos reciben su ubicación en vivo y transmisión de alerta inmediatamente al activar SOS.</string>
+    <string name="contacts_fab_add">Añadir Contacto</string>
+    <string name="contacts_dialog_add_title">Añadir Contacto de Confianza</string>
+    <string name="contacts_dialog_add_desc">Este contacto recibirá alertas SOS, ubicación GPS en vivo y SMS en emergencias.</string>
+    <string name="contacts_dialog_full_name">Nombre Completo *</string>
+    <string name="contacts_dialog_phone_number">Número de Teléfono *</string>
+    <string name="contacts_dialog_relationship">Parentesco (ej. Mamá, Pareja, Amigo)</string>
+    <string name="contacts_dialog_save">Guardar Contacto</string>
+    <string name="contacts_dialog_remove_title">¿Eliminar Contacto?</string>
+    <string name="contacts_dialog_remove_desc">¿Estás seguro de que deseas eliminar a %1$s de tus contactos de emergencia?</string>
+    <string name="contacts_dialog_remove_btn">Eliminar</string>
+    <string name="contacts_empty_title">Aún no hay contactos de confianza</string>
+    <string name="contacts_empty_desc">Añade amigos, familiares o cuidadores que recibirán notificaciones instantáneas y seguimiento en vivo cada vez que actives un SOS.</string>
+    <string name="contacts_empty_add_btn">Añadir Primer Contacto</string>
+    <string name="contacts_empty_load_samples">Cargar Contactos de Ejemplo</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Ajustes</string>
     <string name="settings_subtitle">Preferencias, configuraciones de emergencia y perfil</string>
