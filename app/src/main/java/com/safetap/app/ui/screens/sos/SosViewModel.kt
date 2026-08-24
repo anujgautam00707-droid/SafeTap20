@@ -3,6 +3,8 @@ package com.safetap.app.ui.screens.sos
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.safetap.app.data.auth.AuthRepository
+import com.safetap.app.data.contacts.TrustedContactsRepository
+import com.safetap.app.di.AppContainer
 import com.safetap.app.domain.sos.SosCoordinator
 import com.safetap.app.domain.sos.model.SosError
 import kotlinx.coroutines.Job
@@ -14,7 +16,8 @@ import kotlinx.coroutines.launch
 
 class SosViewModel(
     private val sosCoordinator: SosCoordinator,
-    private val authRepository: AuthRepository? = null
+    private val authRepository: AuthRepository? = null,
+    private val trustedContactsRepository: TrustedContactsRepository = AppContainer.trustedContactsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<SosUiState>(SosUiState.Idle)
@@ -24,6 +27,10 @@ class SosViewModel(
     val batteryPercentage: StateFlow<Int?> =
         _batteryPercentage.asStateFlow()
 
+    private val _contactsCount =
+        MutableStateFlow(trustedContactsRepository.getCurrentContacts().size)
+    val contactsCount: StateFlow<Int> = _contactsCount.asStateFlow()
+
     private var countdownJob: Job? = null
     private var delayedCallJob: Job? = null
 
@@ -31,6 +38,7 @@ class SosViewModel(
         refreshBatteryPercentage()
         recoverActiveSos()
         syncPendingMetadata()
+        observeContactsCount()
     }
 
     private fun recoverActiveSos() {
@@ -44,6 +52,16 @@ class SosViewModel(
     private fun syncPendingMetadata() {
         viewModelScope.launch {
             sosCoordinator.syncPendingMetadata()
+        }
+    }
+
+    private fun observeContactsCount() {
+        viewModelScope.launch {
+            trustedContactsRepository.contacts.collect { contacts ->
+                _contactsCount.value = contacts.size
+            }
+        }
+    }
         }
     }
 
@@ -72,7 +90,7 @@ class SosViewModel(
 
         cancelPendingJobs()
         refreshBatteryPercentage()
-        
+
         if (!bypassPermissionCheck && !sosCoordinator.hasRequiredPermissions()) {
             _uiState.value = SosUiState.CheckingPermissions
             val missing = sosCoordinator.getMissingPermissions()
@@ -117,26 +135,6 @@ class SosViewModel(
         }
     }
 
-    fun triggerImmediately(bypassPermissionCheck: Boolean = false) {
-        countdownJob?.cancel()
-        countdownJob = null
-
-        delayedCallJob?.cancel()
-        delayedCallJob = null
-
-        refreshBatteryPercentage()
-
-        viewModelScope.launch {
-            if (!bypassPermissionCheck && !sosCoordinator.hasRequiredPermissions()) {
-                val missing = sosCoordinator.getMissingPermissions()
-                _uiState.value = SosUiState.PermissionsRequired(missing)
-                return@launch
-            }
-
-            dispatchEmergencySos()
-        }
-    }
-
     fun onPermissionsResult(allGranted: Boolean) {
         // We proceed with the SOS flow even if some permissions were denied.
         // The SOS coordinator will handle missing capabilities gracefully.
@@ -144,7 +142,15 @@ class SosViewModel(
     }
 
     fun cancelSos() {
+        val wasCountdown = _uiState.value is SosUiState.Countdown ||
+                _uiState.value == SosUiState.CheckingPermissions
+
         cancelPendingJobs()
+
+        if (wasCountdown) {
+            _uiState.value = SosUiState.Idle
+            return
+        }
 
         viewModelScope.launch {
             val result = sosCoordinator.cancelSos()
@@ -190,7 +196,7 @@ class SosViewModel(
     }
 
     fun onSosPressed() {
-        triggerImmediately()
+        startSos()
     }
 
     private suspend fun dispatchEmergencySos() {
@@ -235,7 +241,7 @@ class SosViewModel(
                 sosCoordinator.callPrimaryTrustedContact()
 
             if (callResult.isFailure) {
-                // Primary contact call failure is a secondary error and 
+                // Primary contact call failure is a secondary error and
                 // must not disrupt the active SOS broadcast state.
                 val error = callResult.exceptionOrNull()
                 android.util.Log.e("SosViewModel", "Failed to call primary contact: ${error?.message}")

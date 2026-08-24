@@ -40,7 +40,8 @@ object SafeTapViewModelFactory : ViewModelProvider.Factory {
             modelClass.isAssignableFrom(SosViewModel::class.java) ->
                 SosViewModel(
                     AppContainer.sosCoordinator,
-                    authRepository
+                    authRepository,
+                    AppContainer.trustedContactsRepository
                 ) as T
 
             else -> throw IllegalArgumentException(
