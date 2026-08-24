@@ -1,10 +1,19 @@
 package com.safetap.app
 
+import android.app.Application
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import com.safetap.app.data.contacts.TrustedContact
+import org.robolectric.annotation.Config
 import com.safetap.app.data.contacts.TrustedContactsRepository
 import com.safetap.app.data.sos.FakeSosRemoteDataSource
 import com.safetap.app.data.sos.SosRemoteDataSource
 import com.safetap.app.domain.sos.SosCoordinator
+import com.safetap.app.data.sos.LocalSosDataSource
+import com.safetap.app.data.status.AppStatusRepository
+import com.safetap.app.domain.sos.model.LocationPrecision
 import com.safetap.app.domain.sos.model.EmergencyData
 import com.safetap.app.domain.sos.model.LocationResult
 import com.safetap.app.domain.sos.model.LocationTrackingState
@@ -37,10 +46,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
+@RunWith(RobolectricTestRunner::class)
+@Config(
+    sdk = [35],
+    application = Application::class
+)
 @OptIn(ExperimentalCoroutinesApi::class)
 class SosLiveLocationTest {
 
     private val testDispatcher = StandardTestDispatcher()
+    private lateinit var context: Context
+    private lateinit var appStatusRepository: AppStatusRepository
+    private lateinit var localSosDataSource: LocalSosDataSource
 
     private lateinit var permissionChecker: FakePermissionChecker
     private lateinit var locationProvider: FakeLocationProvider
@@ -55,6 +72,9 @@ class SosLiveLocationTest {
 
     @Before
     fun setUp() {
+        context = ApplicationProvider.getApplicationContext()
+        appStatusRepository = AppStatusRepository(context)
+        localSosDataSource = LocalSosDataSource(context)
         permissionChecker = FakePermissionChecker(allGranted = true)
         locationProvider = FakeLocationProvider(
             gpsEnabled = true,
@@ -70,15 +90,26 @@ class SosLiveLocationTest {
         callManager = FakeEmergencyCallManager()
         smsSender = FakeEmergencySmsSender()
         contactsRepository = TrustedContactsRepository(
-            initialContacts = listOf(
-                TrustedContact(name = "Alice", relationship = "Sister", phone = "+15550100", isPrimary = true),
-                TrustedContact(name = "Bob", relationship = "Brother", phone = "+15550200", isPrimary = false)
-            )
+            context = context,
+            appStatusRepository = appStatusRepository
         )
+
+        contactsRepository.addContact(
+            name = "Alice",
+            relationship = "Sister",
+            phone = "+15550100001"
+        ).getOrThrow()
+
+        contactsRepository.addContact(
+            name = "Bob",
+            relationship = "Brother",
+            phone = "+15550200002"
+        ).getOrThrow()
         remoteDataSource = FakeSosRemoteDataSource()
         locationTrackingManager = FakeLocationTrackingManager()
 
         sosCoordinator = SosCoordinator(
+            context = context,
             permissionChecker = permissionChecker,
             locationProvider = locationProvider,
             batteryProvider = batteryProvider,
@@ -86,8 +117,10 @@ class SosLiveLocationTest {
             callManager = callManager,
             emergencySmsSender = smsSender,
             trustedContactsRepository = contactsRepository,
+            appStatusRepository = appStatusRepository,
             remoteDataSource = remoteDataSource,
             locationTrackingManager = locationTrackingManager,
+            localSosDataSource = localSosDataSource,
             ioDispatcher = testDispatcher
         )
     }
@@ -140,6 +173,7 @@ class SosLiveLocationTest {
         }
 
         val coordinator = SosCoordinator(
+            context = context,
             permissionChecker = permissionChecker,
             locationProvider = slowLocationProvider,
             batteryProvider = batteryProvider,
@@ -147,8 +181,10 @@ class SosLiveLocationTest {
             callManager = callManager,
             emergencySmsSender = smsSender,
             trustedContactsRepository = contactsRepository,
+            appStatusRepository = appStatusRepository,
             remoteDataSource = remoteDataSource,
             locationTrackingManager = locationTrackingManager,
+            localSosDataSource = localSosDataSource,
             ioDispatcher = testDispatcher
         )
 
@@ -173,6 +209,7 @@ class SosLiveLocationTest {
         }
 
         val coordinator = SosCoordinator(
+            context = context,
             permissionChecker = permissionChecker,
             locationProvider = locationProvider,
             batteryProvider = batteryProvider,
@@ -180,8 +217,10 @@ class SosLiveLocationTest {
             callManager = callManager,
             emergencySmsSender = smsSender,
             trustedContactsRepository = contactsRepository,
+            appStatusRepository = appStatusRepository,
             remoteDataSource = authFailingDataSource,
             locationTrackingManager = locationTrackingManager,
+            localSosDataSource = localSosDataSource,
             ioDispatcher = testDispatcher
         )
 
@@ -212,6 +251,7 @@ class SosLiveLocationTest {
         }
 
         val coordinatorWithFailingFirebase = SosCoordinator(
+            context = context,
             permissionChecker = permissionChecker,
             locationProvider = locationProvider,
             batteryProvider = batteryProvider,
@@ -219,8 +259,10 @@ class SosLiveLocationTest {
             callManager = callManager,
             emergencySmsSender = smsSender,
             trustedContactsRepository = contactsRepository,
+            appStatusRepository = appStatusRepository,
             remoteDataSource = failingRemoteDataSource,
             locationTrackingManager = locationTrackingManager,
+            localSosDataSource = localSosDataSource,
             ioDispatcher = testDispatcher
         )
 
@@ -376,7 +418,7 @@ class SosLiveLocationTest {
         val expectedGoogleMapsUrl = "https://maps.google.com/?q=${data.latitude},${data.longitude}"
         val expectedSearchUrl = "https://www.google.com/maps/search/?api=1&query=${data.latitude},${data.longitude}"
 
-        val message = sosCoordinator.buildEmergencySmsMessage(data)
+        val message = smsSender.sentMessages.single().message
         assertTrue(message.contains(expectedGoogleMapsUrl))
         assertTrue(expectedSearchUrl.startsWith("https://www.google.com/maps/search/?api=1&query="))
     }
@@ -412,10 +454,39 @@ class SosLiveLocationTest {
     // --- Helpers & Fakes ---
 
     class FakePermissionChecker(var allGranted: Boolean = true) : PermissionChecker {
+
         override fun hasLocationPermission() = allGranted
+
+        override fun hasPreciseLocationPermission() = allGranted
+
+        override fun hasApproximateLocationPermission() = allGranted
+
+        override fun getLocationPrecision(): LocationPrecision {
+            return if (allGranted) {
+                LocationPrecision.HIGH_PRECISION
+            } else {
+                LocationPrecision.UNAVAILABLE
+            }
+        }
+
         override fun hasSmsPermission() = allGranted
+
         override fun hasCallPermission() = allGranted
+
         override fun hasNotificationPermission() = allGranted
+
+        override fun getRequiredPermissions(): List<String> {
+            return emptyList()
+        }
+
+        override fun getMissingPermissions(): List<String> {
+            return if (allGranted) {
+                emptyList()
+            } else {
+                listOf("test_permission")
+            }
+        }
+
         override fun hasRequiredPermissions() = allGranted
     }
 
