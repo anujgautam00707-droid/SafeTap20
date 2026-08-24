@@ -43,16 +43,10 @@ class TrustedContactsRepository(
             val trimmedName = name.trim()
             val normalizedPhone = normalizePhoneNumber(phone)
 
-            require(trimmedName.isNotEmpty()) {
-                "Contact name is required."
-            }
+            validateContactData(trimmedName, normalizedPhone)
 
-            require(
-                _contacts.value.none { contact ->
-                    contact.phone == normalizedPhone
-                }
-            ) {
-                "A contact with this phone number already exists."
+            if (_contacts.value.any { it.phone == normalizedPhone }) {
+                throw IllegalArgumentException("A contact with this phone number already exists.")
             }
 
             val trustedContact = TrustedContact(
@@ -69,6 +63,63 @@ class TrustedContactsRepository(
             )
 
             trustedContact
+        }
+    }
+
+    @Synchronized
+    fun updateContact(
+        updatedContact: TrustedContact
+    ): Result<TrustedContact> {
+        return runCatching {
+            val trimmedName = updatedContact.name.trim()
+            val normalizedPhone = normalizePhoneNumber(updatedContact.phone)
+
+            validateContactData(trimmedName, normalizedPhone)
+
+            val existingContacts = _contacts.value
+            
+            if (existingContacts.none { it.id == updatedContact.id }) {
+                throw NoSuchElementException("Trusted contact was not found.")
+            }
+
+            if (existingContacts.any { it.id != updatedContact.id && it.phone == normalizedPhone }) {
+                throw IllegalArgumentException("Another contact with this phone number already exists.")
+            }
+
+            val contactToUpdate = updatedContact.copy(
+                name = trimmedName,
+                relationship = updatedContact.relationship.trim().ifBlank {
+                    DEFAULT_RELATIONSHIP
+                },
+                phone = normalizedPhone
+            )
+
+            updateContacts(
+                contacts = existingContacts.map { contact ->
+                    if (contact.id == updatedContact.id) contactToUpdate else contact
+                }
+            )
+
+            contactToUpdate
+        }
+    }
+
+    @Synchronized
+    fun setPrimaryContact(
+        contactId: String
+    ): Result<Unit> {
+        return runCatching {
+            val existingContacts = _contacts.value
+
+            if (existingContacts.none { it.id == contactId }) {
+                throw NoSuchElementException("Trusted contact was not found.")
+            }
+
+            updateContacts(
+                contacts = existingContacts.map { contact ->
+                    contact.copy(isPrimary = contact.id == contactId)
+                }
+            )
         }
     }
 
@@ -219,13 +270,19 @@ class TrustedContactsRepository(
         require(
             digits.length in MINIMUM_PHONE_DIGITS..MAXIMUM_PHONE_DIGITS
         ) {
-            "Enter a valid phone number."
+            "Enter a valid phone number (7-15 digits)."
         }
 
         return if (trimmedPhone.startsWith("+")) {
             "+$digits"
         } else {
             digits
+        }
+    }
+
+    private fun validateContactData(name: String, phone: String) {
+        require(name.isNotEmpty()) {
+            "Contact name is required."
         }
     }
 

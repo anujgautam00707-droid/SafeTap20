@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Delete
@@ -106,154 +107,46 @@ fun TrustedContactsScreen(
     val contactsList = uiState.contacts
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var contactToEdit by remember {
+        mutableStateOf<TrustedContact?>(null)
+    }
     var contactToDelete by remember {
         mutableStateOf<TrustedContact?>(null)
     }
 
-    var newName by remember { mutableStateOf("") }
-    var newPhone by remember { mutableStateOf("") }
-    var newRelationship by remember { mutableStateOf("") }
-    var nameError by remember { mutableStateOf(false) }
-    var phoneError by remember { mutableStateOf(false) }
-
-    fun resetAddContactForm() {
-        newName = ""
-        newPhone = ""
-        newRelationship = ""
-        nameError = false
-        phoneError = false
-        viewModel.clearError()
+    if (showAddDialog) {
+        ContactFormDialog(
+            title = "Add Trusted Contact",
+            onDismiss = {
+                showAddDialog = false
+                viewModel.clearError()
+            },
+            errorMessage = uiState.errorMessage,
+            onSave = { name, phone, relationship ->
+                val success = viewModel.addContact(name, relationship, phone)
+                if (success) showAddDialog = false
+                success
+            }
+        )
     }
 
-    if (showAddDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                showAddDialog = false
-                resetAddContactForm()
+    contactToEdit?.let { contact ->
+        ContactFormDialog(
+            title = "Edit Trusted Contact",
+            initialName = contact.name,
+            initialPhone = contact.phone,
+            initialRelationship = contact.relationship,
+            onDismiss = {
+                contactToEdit = null
+                viewModel.clearError()
             },
-            icon = {
-                Icon(
-                    imageVector = Icons.Filled.PersonAdd,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp)
+            errorMessage = uiState.errorMessage,
+            onSave = { name, phone, relationship ->
+                val success = viewModel.updateContact(
+                    contact.copy(name = name, phone = phone, relationship = relationship)
                 )
-            },
-            title = {
-                Text(
-                    text = "Add Trusted Contact",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Text(
-                        text = "This contact will receive SOS alerts, live GPS location, and SMS in emergencies.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    OutlinedTextField(
-                        value = newName,
-                        onValueChange = { value ->
-                            newName = value
-
-                            if (value.isNotBlank()) {
-                                nameError = false
-                            }
-
-                            viewModel.clearError()
-                        },
-                        label = {
-                            Text("Full Name *")
-                        },
-                        isError = nameError,
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = newPhone,
-                        onValueChange = { value ->
-                            newPhone = value
-
-                            if (value.isNotBlank()) {
-                                phoneError = false
-                            }
-
-                            viewModel.clearError()
-                        },
-                        label = {
-                            Text("Phone Number *")
-                        },
-                        isError =
-                            phoneError || uiState.errorMessage != null,
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    uiState.errorMessage?.let { errorMessage ->
-                        Text(
-                            text = errorMessage,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-
-                    OutlinedTextField(
-                        value = newRelationship,
-                        onValueChange = { value ->
-                            newRelationship = value
-                        },
-                        label = {
-                            Text(
-                                "Relationship (e.g. Mom, Partner, Friend)"
-                            )
-                        },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        nameError = newName.isBlank()
-                        phoneError = newPhone.isBlank()
-
-                        if (nameError || phoneError) {
-                            return@Button
-                        }
-
-                        val contactAdded = viewModel.addContact(
-                            name = newName,
-                            relationship = newRelationship,
-                            phone = newPhone
-                        )
-
-                        if (contactAdded) {
-                            showAddDialog = false
-                            resetAddContactForm()
-                        } else {
-                            phoneError = true
-                        }
-                    }
-                ) {
-                    Text("Save Contact")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showAddDialog = false
-                        resetAddContactForm()
-                    }
-                ) {
-                    Text("Cancel")
-                }
+                if (success) contactToEdit = null
+                success
             }
         )
     }
@@ -444,6 +337,12 @@ fun TrustedContactsScreen(
 
                                 context.startActivity(intent)
                             },
+                            onEdit = {
+                                contactToEdit = contact
+                            },
+                            onSetPrimary = {
+                                viewModel.setPrimaryContact(contact.id)
+                            },
                             onDelete = {
                                 contactToDelete = contact
                             }
@@ -487,6 +386,8 @@ fun TrustedContactsScreen(
 private fun ContactCard(
     contact: TrustedContact,
     onCall: () -> Unit,
+    onEdit: () -> Unit,
+    onSetPrimary: () -> Unit,
     onDelete: () -> Unit
 ) {
     val avatarBackgroundColor = remember(contact.id) {
@@ -543,13 +444,16 @@ private fun ContactCard(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    if (contact.isPrimary) {
-                        Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
 
+                    IconButton(
+                        onClick = onSetPrimary,
+                        modifier = Modifier.size(20.dp)
+                    ) {
                         Icon(
                             imageVector = Icons.Filled.Star,
-                            contentDescription = "Primary Contact",
-                            tint = WarningAmber,
+                            contentDescription = if (contact.isPrimary) "Primary Contact" else "Set as Primary",
+                            tint = if (contact.isPrimary) WarningAmber else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                             modifier = Modifier.size(16.dp)
                         )
                     }
@@ -602,6 +506,23 @@ private fun ContactCard(
                     imageVector = Icons.Filled.Call,
                     contentDescription = "Call ${contact.name}",
                     tint = SafeGreen,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            IconButton(
+                onClick = onEdit,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = "Edit ${contact.name}",
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -710,6 +631,107 @@ private fun EmptyContactsState(
             Text("Load Sample Contacts")
         }
     }
+}
+
+@Composable
+private fun ContactFormDialog(
+    title: String,
+    initialName: String = "",
+    initialPhone: String = "",
+    initialRelationship: String = "",
+    onDismiss: () -> Unit,
+    errorMessage: String? = null,
+    onSave: (String, String, String) -> Boolean
+) {
+    var name by remember { mutableStateOf(initialName) }
+    var phone by remember { mutableStateOf(initialPhone) }
+    var relationship by remember { mutableStateOf(initialRelationship) }
+    var nameError by remember { mutableStateOf(false) }
+    var phoneError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Filled.PersonAdd,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(36.dp)
+            )
+        },
+        title = {
+            Text(text = title, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "This contact will receive SOS alerts, live GPS location, and SMS in emergencies.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { value ->
+                        name = value
+                        if (value.isNotBlank()) nameError = false
+                    },
+                    label = { Text("Full Name *") },
+                    isError = nameError,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = phone,
+                    onValueChange = { value ->
+                        phone = value
+                        if (value.isNotBlank()) phoneError = false
+                    },
+                    label = { Text("Phone Number *") },
+                    isError = phoneError || errorMessage != null,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                errorMessage?.let { msg ->
+                    Text(
+                        text = msg,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                OutlinedTextField(
+                    value = relationship,
+                    onValueChange = { value -> relationship = value },
+                    label = { Text("Relationship (e.g. Mom, Partner, Friend)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    nameError = name.isBlank()
+                    phoneError = phone.isBlank()
+                    if (nameError || phoneError) return@Button
+                    onSave(name, phone, relationship)
+                }
+            ) {
+                Text("Save Contact")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 private fun contactInitials(
