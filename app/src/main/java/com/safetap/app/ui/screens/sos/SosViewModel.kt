@@ -29,6 +29,22 @@ class SosViewModel(
 
     init {
         refreshBatteryPercentage()
+        recoverActiveSos()
+        syncPendingMetadata()
+    }
+
+    private fun recoverActiveSos() {
+        val activeSos = sosCoordinator.getActiveSos()
+        if (activeSos != null) {
+            _batteryPercentage.value = activeSos.batteryPercentage
+            _uiState.value = SosUiState.Active(activeSos)
+        }
+    }
+
+    private fun syncPendingMetadata() {
+        viewModelScope.launch {
+            sosCoordinator.syncPendingMetadata()
+        }
     }
 
     fun refreshBatteryPercentage() {

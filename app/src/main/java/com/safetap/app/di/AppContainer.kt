@@ -6,6 +6,7 @@ import com.safetap.app.data.auth.FirebaseAuthManager
 import com.safetap.app.data.contacts.TrustedContactsRepository
 import com.safetap.app.data.status.AppStatusRepository
 import com.safetap.app.data.sos.FakeSosRemoteDataSource
+import com.safetap.app.data.sos.LocalSosDataSource
 import com.safetap.app.data.sos.SosRemoteDataSource
 import com.safetap.app.data.sos.services.DefaultBatteryProvider
 import com.safetap.app.data.sos.services.DefaultEmergencyCallManager
@@ -51,6 +52,9 @@ object AppContainer {
         private set
 
     lateinit var sosRemoteDataSource: SosRemoteDataSource
+        private set
+
+    lateinit var localSosDataSource: LocalSosDataSource
         private set
 
     lateinit var sosCoordinator: SosCoordinator
@@ -114,6 +118,9 @@ object AppContainer {
         sosRemoteDataSource =
             FakeSosRemoteDataSource()
 
+        localSosDataSource =
+            LocalSosDataSource(appContext)
+
         sosCoordinator = SosCoordinator(
             permissionChecker = permissionChecker,
             locationProvider = locationProvider,
@@ -123,7 +130,8 @@ object AppContainer {
             emergencySmsSender = emergencySmsSender,
             trustedContactsRepository = trustedContactsRepository,
             appStatusRepository = appStatusRepository,
-            remoteDataSource = sosRemoteDataSource
+            remoteDataSource = sosRemoteDataSource,
+            localSosDataSource = localSosDataSource
         )
     }
 }
