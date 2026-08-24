@@ -1,6 +1,7 @@
 package com.safetap.app.domain.sos
 
 import com.safetap.app.data.contacts.TrustedContactsRepository
+import com.safetap.app.data.sos.LocalSosDataSource
 import com.safetap.app.data.sos.SosRemoteDataSource
 import com.safetap.app.data.status.AppStatusRepository
 import com.safetap.app.domain.sos.model.EmergencyData
@@ -31,10 +32,16 @@ class SosCoordinator(
     private val trustedContactsRepository: TrustedContactsRepository,
     private val appStatusRepository: AppStatusRepository,
     private val remoteDataSource: SosRemoteDataSource,
+    private val localSosDataSource: LocalSosDataSource,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
 
     private var currentActiveSosId: String? = null
+
+    init {
+        // Recover any active SOS session from local persistence (e.g. after process death)
+        currentActiveSosId = localSosDataSource.getActiveSos()?.sosId
+    }
 
     val smsDeliveryStatuses: StateFlow<List<SmsRecipientStatus>> =
         emergencySmsSender.deliveryStatuses
@@ -128,25 +135,19 @@ class SosCoordinator(
 
             currentActiveSosId = sosId
 
+            // PERSIST LOCALLY: authoritatively mark SOS as active on this device.
+            localSosDataSource.saveActiveSos(emergencyData, isSynced = false)
+
             appStatusRepository.updateSafeTapProtected()
 
             notificationManager.showActiveSosNotification(
                 emergencyData
             )
 
-            val remoteResult =
-                remoteDataSource.createSosEvent(emergencyData)
-
-            if (remoteResult.isFailure) {
-                return@withContext Result.failure(
-                    SosError.UnexpectedError(
-                        remoteResult.exceptionOrNull()
-                            ?: IllegalStateException(
-                                "The SOS event could not be stored."
-                            )
-                    )
-                )
-            }
+            // ATTEMPT REMOTE SYNC: isolated from the primary local SOS result.
+            // We do not wait for the remote response to return Success to the ViewModel.
+            // This ensures SOS remains active even if the network is down.
+            syncEvent(emergencyData)
 
             Result.success(emergencyData)
         } catch (exception: CancellationException) {
@@ -188,23 +189,23 @@ class SosCoordinator(
 
             notificationManager.cancelSosNotification()
 
+            // LOCAL CANCELLATION IS IMMEDIATE
+            currentActiveSosId = null
+            localSosDataSource.clearActiveSos()
+
             if (targetSosId != null) {
-                val closeResult =
-                    remoteDataSource.closeSosEvent(targetSosId)
+                // ATTEMPT REMOTE CLOSE: failure will not block local cancellation.
+                val closeResult = remoteDataSource.closeSosEvent(targetSosId)
 
                 if (closeResult.isFailure) {
-                    return@withContext Result.failure(
-                        SosError.UnexpectedError(
-                            closeResult.exceptionOrNull()
-                                ?: IllegalStateException(
-                                    "The SOS event could not be closed."
-                                )
-                        )
-                    )
+                    // Retain pending closure so it can be retried later.
+                    localSosDataSource.markPendingClosure(targetSosId)
+                    android.util.Log.w("SosCoordinator", "Remote closure failed; marked as pending.")
+                } else {
+                    localSosDataSource.clearPendingClosure()
                 }
             }
 
-            currentActiveSosId = null
             Result.success(Unit)
         } catch (exception: CancellationException) {
             Result.failure(SosError.Cancelled())
@@ -226,6 +227,47 @@ class SosCoordinator(
     }
 
     fun getActiveSosId(): String? = currentActiveSosId
+
+    fun getActiveSos(): EmergencyData? = localSosDataSource.getActiveSos()
+
+    /**
+     * Retries any pending remote synchronization (creation or closure).
+     * Should be called when the app is active and network might be available.
+     */
+    suspend fun syncPendingMetadata() = withContext(ioDispatcher) {
+        // 1. Retry pending creation
+        val activeSos = localSosDataSource.getActiveSos()
+        if (activeSos != null && !localSosDataSource.isSynced()) {
+            val result = remoteDataSource.createSosEvent(activeSos)
+            if (result.isSuccess) {
+                localSosDataSource.markSynced()
+            }
+        }
+
+        // 2. Retry pending closure
+        if (localSosDataSource.isPendingClosure()) {
+            val closureId = localSosDataSource.getPendingClosureId()
+            if (closureId != null) {
+                val result = remoteDataSource.closeSosEvent(closureId)
+                if (result.isSuccess) {
+                    localSosDataSource.clearPendingClosure()
+                }
+            }
+        }
+    }
+
+    private suspend fun syncEvent(emergencyData: EmergencyData) {
+        // Use a non-blocking attempt for the initial sync.
+        // If it fails, the event remains in LocalSosDataSource with isSynced=false.
+        try {
+            val result = remoteDataSource.createSosEvent(emergencyData)
+            if (result.isSuccess) {
+                localSosDataSource.markSynced()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SosCoordinator", "Initial remote sync failed: ${e.message}")
+        }
+    }
 
     private fun buildEmergencySmsMessage(
         emergencyData: EmergencyData
