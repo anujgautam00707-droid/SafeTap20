@@ -103,6 +103,7 @@ object AppContainer {
             FakeSosRemoteDataSource()
 
         sosCoordinator = SosCoordinator(
+            context = appContext,
             permissionChecker = permissionChecker,
             locationProvider = locationProvider,
             batteryProvider = batteryProvider,

@@ -15,18 +15,21 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.safetap.app.R
+import com.safetap.app.util.UiText
 
 @Composable
 fun EmailTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    error: String? = null,
+    error: UiText? = null,
     enabled: Boolean = true,
     imeAction: ImeAction = ImeAction.Next,
     onImeAction: () -> Unit = {}
@@ -39,15 +42,15 @@ fun EmailTextField(
         singleLine = true,
         isError = error != null,
         shape = RoundedCornerShape(12.dp),
-        label = { Text("Email address") },
+        label = { Text(stringResource(R.string.email_address)) },
         placeholder = { Text("name@example.com") },
         leadingIcon = {
             Icon(
                 imageVector = Icons.Filled.Email,
-                contentDescription = "Email Icon"
+                contentDescription = stringResource(R.string.email_icon)
             )
         },
-        supportingText = error?.let { { Text(it) } },
+        supportingText = error?.let { { Text(it.asString()) } },
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Email,
             imeAction = imeAction
@@ -64,7 +67,7 @@ fun PasswordTextField(
     isVisible: Boolean,
     onToggleVisibility: () -> Unit,
     modifier: Modifier = Modifier,
-    error: String? = null,
+    error: UiText? = null,
     enabled: Boolean = true,
     imeAction: ImeAction = ImeAction.Done,
     onImeAction: () -> Unit = {}
@@ -81,10 +84,10 @@ fun PasswordTextField(
         leadingIcon = {
             Icon(
                 imageVector = Icons.Filled.Lock,
-                contentDescription = "Password Icon"
+                contentDescription = stringResource(R.string.password_icon)
             )
         },
-        supportingText = error?.let { { Text(it) } },
+        supportingText = error?.let { { Text(it.asString()) } },
         visualTransformation = if (isVisible) {
             VisualTransformation.None
         } else {
@@ -94,7 +97,7 @@ fun PasswordTextField(
             IconButton(onClick = onToggleVisibility) {
                 Icon(
                     imageVector = if (isVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                    contentDescription = if (isVisible) "Hide password" else "Show password"
+                    contentDescription = if (isVisible) stringResource(R.string.hide_password) else stringResource(R.string.show_password)
                 )
             }
         },

@@ -21,15 +21,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.outlined.Policy
 import androidx.compose.material3.AlertDialog
@@ -37,7 +33,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -53,24 +48,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.safetap.app.R
 import com.safetap.app.di.SafeTapViewModelFactory
 import com.safetap.app.ui.theme.EmergencyRed
-import com.safetap.app.ui.theme.EmergencyRedContainer
 import com.safetap.app.ui.theme.EmergencyWhite
 import com.safetap.app.ui.theme.SafeGreen
 import com.safetap.app.ui.theme.SafeGreenContainer
 import com.safetap.app.ui.theme.WarningAmber
+import com.safetap.app.util.LocaleHelper
 
 @Composable
 fun SettingsScreen(
@@ -79,12 +77,11 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Local UI-only state settings
-    var isDarkMode by remember { mutableStateOf(false) }
-    var autoShareGps by remember { mutableStateOf(true) }
-    var audioSirenOnSos by remember { mutableStateOf(true) }
-    var emergencyNumber by remember { mutableStateOf("112") }
-    var selectedLanguage by remember { mutableStateOf("English (US)") }
+    // Local UI-only state settings (preserved across locale changes)
+    var isDarkMode by rememberSaveable { mutableStateOf(false) }
+    var autoShareGps by rememberSaveable { mutableStateOf(true) }
+    var audioSirenOnSos by rememberSaveable { mutableStateOf(true) }
+    var emergencyNumber by rememberSaveable { mutableStateOf("112") }
 
     // Dialog controllers
     var showLanguageDialog by remember { mutableStateOf(false) }
@@ -108,24 +105,24 @@ fun SettingsScreen(
             },
             title = {
                 Text(
-                    text = "Sign Out",
+                    text = stringResource(R.string.sign_out_confirm_title),
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
-                Text("Are you sure you want to sign out of SafeTap? You will need to log in again to use live emergency broadcasts.")
+                Text(stringResource(R.string.sign_out_confirm_message))
             },
             confirmButton = {
                 Button(
                     onClick = { viewModel.onSignOut(onLoggedOut) },
                     colors = ButtonDefaults.buttonColors(containerColor = EmergencyRed)
                 ) {
-                    Text("Sign Out", color = EmergencyWhite)
+                    Text(stringResource(R.string.sign_out), color = EmergencyWhite)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.onShowSignOutDialog(false) }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -133,7 +130,7 @@ fun SettingsScreen(
 
     // Language Selector Dialog
     if (showLanguageDialog) {
-        val languages = listOf("English (US)", "Español", "हिन्दी (Hindi)", "Français", "Deutsch", "日本語")
+        val languages = LocaleHelper.getLanguages()
         AlertDialog(
             onDismissRequest = { showLanguageDialog = false },
             icon = {
@@ -143,7 +140,7 @@ fun SettingsScreen(
                     tint = MaterialTheme.colorScheme.primary
                 )
             },
-            title = { Text("Select Language", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.select_language), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     languages.forEach { lang ->
@@ -152,16 +149,18 @@ fun SettingsScreen(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
                                 .clickable {
-                                    selectedLanguage = lang
+                                    viewModel.onLanguageSelected(lang)
+                                    LocaleHelper.applyLanguage(lang)
                                     showLanguageDialog = false
                                 }
                                 .padding(vertical = 8.dp, horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
-                                selected = selectedLanguage == lang,
+                                selected = uiState.selectedLanguage == lang,
                                 onClick = {
-                                    selectedLanguage = lang
+                                    viewModel.onLanguageSelected(lang)
+                                    LocaleHelper.applyLanguage(lang)
                                     showLanguageDialog = false
                                 }
                             )
@@ -169,7 +168,7 @@ fun SettingsScreen(
                             Text(
                                 text = lang,
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = if (selectedLanguage == lang) FontWeight.Bold else FontWeight.Normal
+                                fontWeight = if (uiState.selectedLanguage == lang) FontWeight.Bold else FontWeight.Normal
                             )
                         }
                     }
@@ -178,7 +177,7 @@ fun SettingsScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showLanguageDialog = false }) {
-                    Text("Close")
+                    Text(stringResource(R.string.close))
                 }
             }
         )
@@ -195,11 +194,11 @@ fun SettingsScreen(
                     tint = EmergencyRed
                 )
             },
-            title = { Text("Emergency Dispatch Number", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.emergency_dispatch_number), fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     Text(
-                        text = "Customize the default emergency line dialed when using rapid dispatch. In India, 112 is the nationwide emergency response number.",
+                        text = stringResource(R.string.emergency_number_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -207,7 +206,7 @@ fun SettingsScreen(
                     OutlinedTextField(
                         value = tempEmergencyNumber,
                         onValueChange = { tempEmergencyNumber = it },
-                        label = { Text("Emergency Number") },
+                        label = { Text(stringResource(R.string.emergency_number_label)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -222,12 +221,12 @@ fun SettingsScreen(
                         showEmergencyNumberDialog = false
                     }
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEmergencyNumberDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -245,7 +244,7 @@ fun SettingsScreen(
                     modifier = Modifier.size(36.dp)
                 )
             },
-            title = { Text("About SafeTap", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.about_safetap), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
@@ -254,13 +253,13 @@ fun SettingsScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Version 1.0.4 (Build 2026.1)\nDesigned for high-reliability emergency response, live location telemetry, and rapid contact dispatch.",
+                        text = stringResource(R.string.safetap_version) + "\n" + stringResource(R.string.safetap_about_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "© 2026 SafeTap Safety Inc. All rights reserved.",
+                        text = stringResource(R.string.safetap_copyright),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
@@ -268,7 +267,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 Button(onClick = { showAboutDialog = false }) {
-                    Text("Got it")
+                    Text(stringResource(R.string.got_it))
                 }
             }
         )
@@ -285,26 +284,26 @@ fun SettingsScreen(
                     tint = SafeGreen
                 )
             },
-            title = { Text("Privacy & Data Security", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.privacy_title), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = "• End-to-End Encryption: Location coordinates and emergency notifications are encrypted during transit.",
+                        text = "• " + stringResource(R.string.privacy_encryption),
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = "• No Background Tracking: Location sharing only activates during manual SOS triggers or safety countdowns.",
+                        text = "• " + stringResource(R.string.privacy_tracking),
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = "• Strict Contact Access: Only people you designate as Trusted Contacts receive your alert broadcasts.",
+                        text = "• " + stringResource(R.string.privacy_contacts),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
             },
             confirmButton = {
                 Button(onClick = { showPrivacyDialog = false }) {
-                    Text("Understood")
+                    Text(stringResource(R.string.understood))
                 }
             }
         )
@@ -319,13 +318,13 @@ fun SettingsScreen(
     ) {
         // Top Header
         Text(
-            text = "Settings",
+            text = stringResource(R.string.settings_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
         Text(
-            text = "Preferences, emergency configurations & profile",
+            text = stringResource(R.string.settings_subtitle),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -370,7 +369,7 @@ fun SettingsScreen(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = uiState.userEmail.ifBlank { "SafeTap User" },
+                        text = uiState.userEmail.ifBlank { stringResource(R.string.safetap_user) },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -384,7 +383,7 @@ fun SettingsScreen(
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Text(
-                                text = "PRO ACTIVE",
+                                text = stringResource(R.string.pro_active),
                                 color = SafeGreen,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.ExtraBold
@@ -392,7 +391,7 @@ fun SettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "SafeGuard On",
+                            text = stringResource(R.string.safeguard_on),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -404,14 +403,14 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         // Section: Emergency Preferences
-        SettingsSectionHeader("EMERGENCY CONFIGURATION")
+        SettingsSectionHeader(stringResource(R.string.emergency_configuration))
 
         SettingsCardGroup {
             SettingsClickableRow(
                 icon = Icons.Filled.Call,
                 iconTint = EmergencyRed,
-                title = "Emergency Dispatch Number",
-                subtitle = "Default line: $emergencyNumber",
+                title = stringResource(R.string.emergency_dispatch_number),
+                subtitle = stringResource(R.string.emergency_number_label) + ": $emergencyNumber",
                 onClick = {
                     tempEmergencyNumber = emergencyNumber
                     showEmergencyNumberDialog = true
@@ -423,8 +422,8 @@ fun SettingsScreen(
             SettingsToggleRow(
                 icon = Icons.Filled.LocationOn,
                 iconTint = SafeGreen,
-                title = "Auto-Share Live GPS",
-                subtitle = "Send GPS coordinates on SOS trigger",
+                title = stringResource(R.string.auto_share_gps),
+                subtitle = stringResource(R.string.auto_share_gps_desc),
                 checked = autoShareGps,
                 onCheckedChange = { autoShareGps = it }
             )
@@ -434,8 +433,8 @@ fun SettingsScreen(
             SettingsToggleRow(
                 icon = Icons.AutoMirrored.Filled.VolumeUp,
                 iconTint = WarningAmber,
-                title = "Audible Alarm Siren",
-                subtitle = "Play siren when SOS countdown reaches zero",
+                title = stringResource(R.string.audible_alarm_siren),
+                subtitle = stringResource(R.string.audible_alarm_siren_desc),
                 checked = audioSirenOnSos,
                 onCheckedChange = { audioSirenOnSos = it }
             )
@@ -444,14 +443,14 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         // Section: Appearance & Localization
-        SettingsSectionHeader("APP PREFERENCES")
+        SettingsSectionHeader(stringResource(R.string.app_preferences))
 
         SettingsCardGroup {
             SettingsToggleRow(
                 icon = Icons.Filled.DarkMode,
                 iconTint = Color(0xFF6366F1),
-                title = "Dark Theme",
-                subtitle = "Adjust application visual theme",
+                title = stringResource(R.string.dark_theme),
+                subtitle = stringResource(R.string.dark_theme_desc),
                 checked = isDarkMode,
                 onCheckedChange = { isDarkMode = it }
             )
@@ -461,8 +460,8 @@ fun SettingsScreen(
             SettingsClickableRow(
                 icon = Icons.Filled.Language,
                 iconTint = Color(0xFF0EA5E9),
-                title = "App Language",
-                subtitle = selectedLanguage,
+                title = stringResource(R.string.app_language),
+                subtitle = uiState.selectedLanguage,
                 onClick = { showLanguageDialog = true }
             )
         }
@@ -470,14 +469,14 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(20.dp))
 
         // Section: About & Security
-        SettingsSectionHeader("ABOUT & SECURITY")
+        SettingsSectionHeader(stringResource(R.string.about_security))
 
         SettingsCardGroup {
             SettingsClickableRow(
                 icon = Icons.Filled.Shield,
                 iconTint = MaterialTheme.colorScheme.primary,
-                title = "About SafeTap",
-                subtitle = "Version 1.0.4 (Build 2026.1)",
+                title = stringResource(R.string.about_safetap),
+                subtitle = stringResource(R.string.safetap_version),
                 onClick = { showAboutDialog = true }
             )
 
@@ -486,8 +485,8 @@ fun SettingsScreen(
             SettingsClickableRow(
                 icon = Icons.Outlined.Policy,
                 iconTint = Color(0xFF10B981),
-                title = "Privacy & Encryption",
-                subtitle = "Security assurances & data rights",
+                title = stringResource(R.string.privacy_encryption_link),
+                subtitle = stringResource(R.string.privacy_encryption_desc),
                 onClick = { showPrivacyDialog = true }
             )
         }
@@ -516,7 +515,7 @@ fun SettingsScreen(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Sign Out",
+                text = stringResource(R.string.sign_out),
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = EmergencyRed

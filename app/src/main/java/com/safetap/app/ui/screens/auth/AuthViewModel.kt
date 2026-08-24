@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.safetap.app.data.auth.AuthOutcome
 import com.safetap.app.data.auth.AuthRepository
 import com.safetap.app.domain.auth.AuthValidator
+import com.safetap.app.util.UiText
+import com.safetap.app.R
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -67,7 +69,7 @@ class AuthViewModel(
             }
             return
         }
-        authenticate(successMessage = "Welcome back!") {
+        authenticate(successMessage = UiText.StringResource(R.string.welcome_back)) {
             authRepository.signIn(state.email, state.password)
         }
     }
@@ -87,7 +89,7 @@ class AuthViewModel(
             }
             return
         }
-        authenticate(successMessage = "Account created successfully!") {
+        authenticate(successMessage = UiText.StringResource(R.string.account_created)) {
             authRepository.signUp(state.email, state.password)
         }
     }
@@ -106,7 +108,7 @@ class AuthViewModel(
                     _uiState.update { it.copy(isLoading = false) }
                     _events.send(
                         AuthEvent.Snackbar(
-                            message = "Password reset email sent. Please check your inbox.",
+                            message = UiText.StringResource(R.string.password_reset_sent),
                             isError = false
                         )
                     )
@@ -121,7 +123,7 @@ class AuthViewModel(
     }
 
     private fun authenticate(
-        successMessage: String,
+        successMessage: UiText,
         request: suspend () -> AuthOutcome
     ) {
         viewModelScope.launch {

@@ -24,9 +24,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.safetap.app.R
 import com.safetap.app.di.SafeTapViewModelFactory
 import com.safetap.app.ui.theme.EmergencyRed
 import com.safetap.app.ui.theme.EmergencyWhite
@@ -67,7 +69,7 @@ fun SplashScreen(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
                 imageVector = Icons.Filled.Sos,
-                contentDescription = "SafeTap Logo",
+                contentDescription = stringResource(R.string.safetap_logo),
                 tint = EmergencyWhite,
                 modifier = Modifier
                     .size(96.dp)
@@ -75,13 +77,13 @@ fun SplashScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "SafeTap",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineLarge,
                 color = EmergencyWhite
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Help within reach",
+                text = stringResource(R.string.help_within_reach),
                 style = MaterialTheme.typography.bodyLarge,
                 color = EmergencyWhite.copy(alpha = 0.9f)
             )

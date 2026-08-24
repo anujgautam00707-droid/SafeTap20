@@ -35,11 +35,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.safetap.app.R
 import com.safetap.app.di.SafeTapViewModelFactory
 import com.safetap.app.ui.components.EmailTextField
 import com.safetap.app.ui.components.PasswordTextField
@@ -55,11 +57,12 @@ fun SignUpScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is AuthEvent.Snackbar -> {
-                    snackbarHostState.showSnackbar(event.message)
+                    snackbarHostState.showSnackbar(event.message.asString(context))
                 }
                 is AuthEvent.NavigateHome -> {
                     onSignUpSuccess()
@@ -97,7 +100,7 @@ fun SignUpScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.PersonAdd,
-                        contentDescription = "Sign Up Icon",
+                        contentDescription = stringResource(R.string.sign_up),
                         tint = EmergencyWhite,
                         modifier = Modifier.size(38.dp)
                     )
@@ -106,7 +109,7 @@ fun SignUpScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Text(
-                    text = "Create Account",
+                    text = stringResource(R.string.create_account),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -114,7 +117,7 @@ fun SignUpScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Join SafeTap to protect yourself and loved ones",
+                    text = stringResource(R.string.sign_up_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
@@ -136,7 +139,7 @@ fun SignUpScreen(
                 PasswordTextField(
                     value = uiState.password,
                     onValueChange = viewModel::onPasswordChanged,
-                    label = "Password (min 6 characters)",
+                    label = stringResource(R.string.password_min_chars),
                     isVisible = uiState.isPasswordVisible,
                     onToggleVisibility = viewModel::togglePasswordVisibility,
                     error = uiState.passwordError,
@@ -150,7 +153,7 @@ fun SignUpScreen(
                 PasswordTextField(
                     value = uiState.confirmPassword,
                     onValueChange = viewModel::onConfirmPasswordChanged,
-                    label = "Confirm Password",
+                    label = stringResource(R.string.confirm_password_label),
                     isVisible = uiState.isConfirmPasswordVisible,
                     onToggleVisibility = viewModel::toggleConfirmPasswordVisibility,
                     error = uiState.confirmPasswordError,
@@ -182,7 +185,7 @@ fun SignUpScreen(
                         )
                     } else {
                         Text(
-                            text = "Create Account",
+                            text = stringResource(R.string.create_account),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -197,7 +200,7 @@ fun SignUpScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Already have an account?",
+                        text = stringResource(R.string.already_have_account),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -207,7 +210,7 @@ fun SignUpScreen(
                         enabled = !uiState.isLoading
                     ) {
                         Text(
-                            text = "Sign In",
+                            text = stringResource(R.string.sign_in),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold
                         )

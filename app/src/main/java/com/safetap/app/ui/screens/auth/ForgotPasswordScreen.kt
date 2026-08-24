@@ -33,11 +33,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.safetap.app.R
 import com.safetap.app.di.SafeTapViewModelFactory
 import com.safetap.app.ui.components.EmailTextField
 import com.safetap.app.ui.theme.EmergencyRed
@@ -51,11 +53,12 @@ fun ForgotPasswordScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is AuthEvent.Snackbar -> {
-                    snackbarHostState.showSnackbar(event.message)
+                    snackbarHostState.showSnackbar(event.message.asString(context))
                 }
                 else -> Unit
             }
@@ -90,7 +93,7 @@ fun ForgotPasswordScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.LockReset,
-                        contentDescription = "Reset Password Icon",
+                        contentDescription = stringResource(R.string.forgot_password_title),
                         tint = EmergencyWhite,
                         modifier = Modifier.size(40.dp)
                     )
@@ -99,7 +102,7 @@ fun ForgotPasswordScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Text(
-                    text = "Forgot Password?",
+                    text = stringResource(R.string.forgot_password_title),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -107,7 +110,7 @@ fun ForgotPasswordScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Enter your registered email address and we'll send you a password reset link.",
+                    text = stringResource(R.string.forgot_password_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
@@ -147,7 +150,7 @@ fun ForgotPasswordScreen(
                         )
                     } else {
                         Text(
-                            text = "Send Reset Link",
+                            text = stringResource(R.string.send_reset_link),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -162,7 +165,7 @@ fun ForgotPasswordScreen(
                     enabled = !uiState.isLoading
                 ) {
                     Text(
-                        text = "Back to Sign In",
+                        text = stringResource(R.string.back_to_sign_in),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold
                     )

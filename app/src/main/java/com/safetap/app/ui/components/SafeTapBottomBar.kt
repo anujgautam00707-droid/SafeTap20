@@ -11,6 +11,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,6 +44,7 @@ fun SafeTapBottomBar(
         ) {
             mainBottomNavItems.forEach { item ->
                 val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
+                val label = stringResource(item.labelResId)
                 NavigationBarItem(
                     selected = selected,
                     onClick = {
@@ -57,12 +59,12 @@ fun SafeTapBottomBar(
                     icon = {
                         Icon(
                             imageVector = item.icon,
-                            contentDescription = item.label
+                            contentDescription = label
                         )
                     },
                     label = {
                         Text(
-                            text = item.label,
+                            text = label,
                             fontSize = 11.sp,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
                         )
