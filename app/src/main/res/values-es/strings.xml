@@ -1,0 +1,51 @@
+<resources>
+    <string name="app_name">SafeTap</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_subtitle">Preferencias, configuraciones de emergencia y perfil</string>
+    <string name="default_user_name">Usuario de SafeTap</string>
+    <string name="pro_active">PRO ACTIVO</string>
+    <string name="safeguard_on">SafeGuard Activado</string>
+
+    <!-- Emergency Configuration Section -->
+    <string name="section_emergency_configuration">CONFIGURACIÓN DE EMERGENCIA</string>
+    <string name="emergency_dispatch_number">Número de Despacho de Emergencia</string>
+    <string name="emergency_dispatch_subtitle">Línea predeterminada: %1$s</string>
+    <string name="auto_share_live_gps">Compartir GPS en Vivo</string>
+    <string name="auto_share_live_gps_desc">Enviar coordenadas GPS al activar SOS</string>
+    <string name="audible_alarm_siren">Sirena de Alarma Sonora</string>
+    <string name="audible_alarm_siren_desc">Sonar sirena cuando la cuenta regresiva de SOS llegue a cero</string>
+
+    <!-- App Preferences Section -->
+    <string name="section_app_preferences">PREFERENCIAS DE LA APLICACIÓN</string>
+    <string name="dark_theme">Tema Oscuro</string>
+    <string name="dark_theme_desc">Ajustar el tema visual de la aplicación</string>
+    <string name="app_language">Idioma de la Aplicación</string>
+
+    <!-- About & Security Section -->
+    <string name="section_about_security">ACERCA DE Y SEGURIDAD</string>
+    <string name="about_safetap">Acerca de SafeTap</string>
+    <string name="about_safetap_version">Versión 1.0.4 (Compilación 2026.1)</string>
+    <string name="about_safetap_subtitle">SafeTap Seguridad Personal</string>
+    <string name="about_safetap_description">Versión 1.0.4 (Compilación 2026.1)\nDiseñado para respuesta de emergencia de alta fiabilidad, telemetría de ubicación en vivo y despacho rápido de contactos.</string>
+    <string name="about_safetap_copyright">© 2026 SafeTap Safety Inc. Todos los derechos reservados.</string>
+    <string name="privacy_encryption">Privacidad y Cifrado</string>
+    <string name="privacy_encryption_desc">Garantías de seguridad y derechos de datos</string>
+    <string name="privacy_bullet_1">• Cifrado de extremo a extremo: Las coordenadas de ubicación y notificaciones de emergencia están cifradas durante el tránsito.</string>
+    <string name="privacy_bullet_2">• Sin rastreo en segundo plano: La ubicación solo se comparte durante la activación manual de SOS o cuentas regresivas.</string>
+    <string name="privacy_bullet_3">• Acceso estricto a contactos: Solo los Contactos de Confianza reciben las alertas de emergencia.</string>
+
+    <!-- Common Actions & Dialogs -->
+    <string name="sign_out">Cerrar Sesión</string>
+    <string name="sign_out_dialog_title">Cerrar Sesión</string>
+    <string name="sign_out_dialog_message">¿Estás seguro de que deseas cerrar sesión en SafeTap? Deberás iniciar sesión nuevamente para usar las transmisiones de emergencia en vivo.</string>
+    <string name="cancel">Cancelar</string>
+    <string name="save">Guardar</string>
+    <string name="close">Cerrar</string>
+    <string name="got_it">Entendido</string>
+    <string name="understood">Entendido</string>
+    <string name="select_language">Seleccionar Idioma</string>
+    <string name="emergency_number_dialog_desc">Personaliza la línea de emergencia predeterminada al usar el despacho rápido (ej. 911 en EE. UU., 112 en Europa, 999 en Reino Unido, 100 en India).</string>
+    <string name="emergency_number_label">Número de Emergencia</string>
+</resources>

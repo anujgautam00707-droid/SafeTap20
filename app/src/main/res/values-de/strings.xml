@@ -1,0 +1,51 @@
+<resources>
+    <string name="app_name">SafeTap</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_subtitle">Präferenzen, Notfallkonfigurationen &amp; Profil</string>
+    <string name="default_user_name">SafeTap-Benutzer</string>
+    <string name="pro_active">PRO AKTIV</string>
+    <string name="safeguard_on">SafeGuard Aktiv</string>
+
+    <!-- Emergency Configuration Section -->
+    <string name="section_emergency_configuration">NOTFALLKONFIGURATION</string>
+    <string name="emergency_dispatch_number">Notrufnummer</string>
+    <string name="emergency_dispatch_subtitle">Standardleitung: %1$s</string>
+    <string name="auto_share_live_gps">Live-GPS automatisch teilen</string>
+    <string name="auto_share_live_gps_desc">GPS-Koordinaten bei SOS-Auslösung senden</string>
+    <string name="audible_alarm_siren">Akustische Alarmsirene</string>
+    <string name="audible_alarm_siren_desc">Sirene abspielen, wenn der SOS-Countdown abgelaufen ist</string>
+
+    <!-- App Preferences Section -->
+    <string name="section_app_preferences">APP-EINSTELLUNGEN</string>
+    <string name="dark_theme">Dunkles Design</string>
+    <string name="dark_theme_desc">Visuelles Erscheinungsbild der App anpassen</string>
+    <string name="app_language">App-Sprache</string>
+
+    <!-- About & Security Section -->
+    <string name="section_about_security">ÜBER &amp; SICHERHEIT</string>
+    <string name="about_safetap">Über SafeTap</string>
+    <string name="about_safetap_version">Version 1.0.4 (Build 2026.1)</string>
+    <string name="about_safetap_subtitle">SafeTap Persönliche Sicherheit</string>
+    <string name="about_safetap_description">Version 1.0.4 (Build 2026.1)\nEntwickelt für hochzuverlässige Notfallreaktion, Live-Standortübertragung und schnelle Kontaktabfertigung.</string>
+    <string name="about_safetap_copyright">© 2026 SafeTap Safety Inc. Alle Rechte vorbehalten.</string>
+    <string name="privacy_encryption">Datenschutz &amp; Verschlüsselung</string>
+    <string name="privacy_encryption_desc">Sicherheitsgarantien und Datenrechte</string>
+    <string name="privacy_bullet_1">• Ende-zu-Ende-Verschlüsselung: Standortkoordinaten und Notfallbenachrichtigungen sind während der Übertragung verschlüsselt.</string>
+    <string name="privacy_bullet_2">• Kein Hintergrund-Tracking: Die Standortfreigabe wird nur bei manuellen SOS-Auslösern oder Countdowns aktiviert.</string>
+    <string name="privacy_bullet_3">• Strenger Kontaktzugriff: Nur Personen, die Sie als vertrauenswürdige Kontakte festlegen, erhalten Alarmübertragungen.</string>
+
+    <!-- Common Actions & Dialogs -->
+    <string name="sign_out">Abmelden</string>
+    <string name="sign_out_dialog_title">Abmelden</string>
+    <string name="sign_out_dialog_message">Möchten Sie sich wirklich von SafeTap abmelden? Sie müssen sich erneut anmelden, um Live-Notfallübertragungen zu nutzen.</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="save">Speichern</string>
+    <string name="close">Schließen</string>
+    <string name="got_it">Verstanden</string>
+    <string name="understood">Verstanden</string>
+    <string name="select_language">Sprache Auswählen</string>
+    <string name="emergency_number_dialog_desc">Passen Sie die standardmäßige Notrufnummer an (z. B. 112 in der EU, 911 in den USA, 100 in Indien).</string>
+    <string name="emergency_number_label">Notrufnummer</string>
+</resources>
