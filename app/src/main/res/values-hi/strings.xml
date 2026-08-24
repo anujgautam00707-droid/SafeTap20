@@ -1,0 +1,51 @@
+<resources>
+    <string name="app_name">SafeTap</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">सेटिंग्स</string>
+    <string name="settings_subtitle">प्राथमिकताएं, आपातकालीन कॉन्फ़िगरेशन और प्रोफ़ाइल</string>
+    <string name="default_user_name">SafeTap उपयोगकर्ता</string>
+    <string name="pro_active">प्रो सक्रिय</string>
+    <string name="safeguard_on">सुरक्षा चालू</string>
+
+    <!-- Emergency Configuration Section -->
+    <string name="section_emergency_configuration">आपातकालीन कॉन्फ़िगरेशन</string>
+    <string name="emergency_dispatch_number">आपातकालीन नंबर</string>
+    <string name="emergency_dispatch_subtitle">डिफ़ॉल्ट लाइन: %1$s</string>
+    <string name="auto_share_live_gps">लाइव GPS ऑटो-शेयर करें</string>
+    <string name="auto_share_live_gps_desc">SOS ट्रिगर होने पर GPS लोकेशन भेजें</string>
+    <string name="audible_alarm_siren">ध्वनि अलार्म सायरन</string>
+    <string name="audible_alarm_siren_desc">SOS काउंटडाउन समाप्त होने पर सायरन बजाएं</string>
+
+    <!-- App Preferences Section -->
+    <string name="section_app_preferences">ऐप प्राथमिकताएं</string>
+    <string name="dark_theme">डार्क थीम</string>
+    <string name="dark_theme_desc">ऐप का विज़ुअल थीम बदलें</string>
+    <string name="app_language">ऐप की भाषा</string>
+
+    <!-- About & Security Section -->
+    <string name="section_about_security">के बारे में और सुरक्षा</string>
+    <string name="about_safetap">SafeTap के बारे में</string>
+    <string name="about_safetap_version">संस्करण 1.0.4 (Build 2026.1)</string>
+    <string name="about_safetap_subtitle">SafeTap व्यक्तिगत सुरक्षा</string>
+    <string name="about_safetap_description">संस्करण 1.0.4 (Build 2026.1)\nउच्च-विश्वसनीयता आपातकालीन प्रतिक्रिया, लाइव लोकेशन और त्वरित संपर्क के लिए डिज़ाइन किया गया।</string>
+    <string name="about_safetap_copyright">© 2026 SafeTap Safety Inc. सर्वाधिकार सुरक्षित।</string>
+    <string name="privacy_encryption">गोपनीयता और एन्क्रिप्शन</string>
+    <string name="privacy_encryption_desc">सुरक्षा आश्वासन और डेटा अधिकार</string>
+    <string name="privacy_bullet_1">• एंड-टू-एंड एन्क्रिप्शन: लोकेशन निर्देशांक और आपातकालीन सूचनाएं एन्क्रिप्टेड रहती हैं।</string>
+    <string name="privacy_bullet_2">• कोई बैकग्राउंड ट्रैकिंग नहीं: लोकेशन शेयरिंग केवल आपातकालीन SOS या काउंटडाउन के दौरान ही सक्रिय होती है।</string>
+    <string name="privacy_bullet_3">• सुरक्षित संपर्क पहुंच: केवल आपके द्वारा चुने गए विश्वसनीय संपर्कों को ही आपातकालीन सूचनाएं प्राप्त होती हैं।</string>
+
+    <!-- Common Actions & Dialogs -->
+    <string name="sign_out">साइन आउट</string>
+    <string name="sign_out_dialog_title">साइन आउट</string>
+    <string name="sign_out_dialog_message">क्या आप वाकई SafeTap से साइन आउट करना चाहते हैं? लाइव आपातकालीन प्रसारण का उपयोग करने के लिए आपको फिर से लॉग इन करना होगा।</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="save">सहेजें</string>
+    <string name="close">बंद करें</string>
+    <string name="got_it">समझ गया</string>
+    <string name="understood">समझ गया</string>
+    <string name="select_language">भाषा चुनें</string>
+    <string name="emergency_number_dialog_desc">त्वरित आपातकालीन कॉल के लिए डिफ़ॉल्ट नंबर सेट करें (उदा. भारत में 112/100, अमेरिका में 911)।</string>
+    <string name="emergency_number_label">आपातकालीन नंबर</string>
+</resources>

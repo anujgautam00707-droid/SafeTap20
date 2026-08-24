@@ -200,10 +200,14 @@ fun SosScreen(
 
                         is SosUiState.Error ->
                             state.message
+
+                        SosUiState.PermissionsRequired ->
+                            "Permissions required to trigger SOS"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = when (uiState) {
                         SosUiState.CheckingPermissions,
+                        SosUiState.PermissionsRequired,
                         is SosUiState.Countdown -> WarningAmber
 
                         SosUiState.CollectingEmergencyData,
@@ -225,6 +229,7 @@ fun SosScreen(
                     .background(
                         when (uiState) {
                             SosUiState.CheckingPermissions,
+                            SosUiState.PermissionsRequired,
                             is SosUiState.Countdown -> WarningAmber
 
                             SosUiState.CollectingEmergencyData,
@@ -245,6 +250,7 @@ fun SosScreen(
                     text = when (uiState) {
                         SosUiState.Idle -> "ARMED"
                         SosUiState.CheckingPermissions -> "CHECKING"
+                        SosUiState.PermissionsRequired -> "PERMISSIONS"
                         is SosUiState.Countdown -> "COUNTING"
                         SosUiState.CollectingEmergencyData -> "PREPARING"
                         is SosUiState.ReadyToSend -> "READY"
