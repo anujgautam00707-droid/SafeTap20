@@ -46,7 +46,7 @@ class SosViewModel(
         }
     }
 
-    fun startSos() {
+    fun startSos(bypassPermissionCheck: Boolean = false) {
         if (
             _uiState.value is SosUiState.Countdown ||
             _uiState.value is SosUiState.Active
@@ -56,15 +56,11 @@ class SosViewModel(
 
         cancelPendingJobs()
         refreshBatteryPercentage()
-        _uiState.value = SosUiState.CheckingPermissions
-
-        val permissionCheck = sosCoordinator.checkPermissions()
-
-        if (permissionCheck.isFailure) {
-            showFailure(
-                throwable = permissionCheck.exceptionOrNull(),
-                fallback = SosError.PermissionDenied()
-            )
+        
+        if (!bypassPermissionCheck && !sosCoordinator.hasRequiredPermissions()) {
+            _uiState.value = SosUiState.CheckingPermissions
+            val missing = sosCoordinator.getMissingPermissions()
+            _uiState.value = SosUiState.PermissionsRequired(missing)
             return
         }
 
@@ -105,7 +101,7 @@ class SosViewModel(
         }
     }
 
-    fun triggerImmediately() {
+    fun triggerImmediately(bypassPermissionCheck: Boolean = false) {
         countdownJob?.cancel()
         countdownJob = null
 
@@ -115,18 +111,20 @@ class SosViewModel(
         refreshBatteryPercentage()
 
         viewModelScope.launch {
-            val permissionCheck = sosCoordinator.checkPermissions()
-
-            if (permissionCheck.isFailure) {
-                showFailure(
-                    throwable = permissionCheck.exceptionOrNull(),
-                    fallback = SosError.PermissionDenied()
-                )
+            if (!bypassPermissionCheck && !sosCoordinator.hasRequiredPermissions()) {
+                val missing = sosCoordinator.getMissingPermissions()
+                _uiState.value = SosUiState.PermissionsRequired(missing)
                 return@launch
             }
 
             dispatchEmergencySos()
         }
+    }
+
+    fun onPermissionsResult(allGranted: Boolean) {
+        // We proceed with the SOS flow even if some permissions were denied.
+        // The SOS coordinator will handle missing capabilities gracefully.
+        startSos(bypassPermissionCheck = true)
     }
 
     fun cancelSos() {
@@ -221,12 +219,10 @@ class SosViewModel(
                 sosCoordinator.callPrimaryTrustedContact()
 
             if (callResult.isFailure) {
-                showFailure(
-                    throwable = callResult.exceptionOrNull(),
-                    fallback = SosError.UnexpectedError(
-                        message = "The primary trusted contact could not be called."
-                    )
-                )
+                // Primary contact call failure is a secondary error and 
+                // must not disrupt the active SOS broadcast state.
+                val error = callResult.exceptionOrNull()
+                android.util.Log.e("SosViewModel", "Failed to call primary contact: ${error?.message}")
             }
         }
     }
