@@ -1,7 +1,10 @@
 package com.safetap.app.ui.screens.home
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -154,20 +157,31 @@ fun HomeScreen(
                 )
             },
             text = {
-                Text("Do you want to dial emergency dispatch (911 / 112) immediately?")
+                Text("Do you want to dial emergency dispatch (112) immediately?")
             },
             confirmButton = {
                 Button(
                     onClick = {
                         showEmergencyCallDialog = false
-                        val intent = Intent(Intent.ACTION_DIAL).apply {
-                            data = Uri.parse("tel:911")
+                        val callIntent = Intent(Intent.ACTION_CALL).apply {
+                            data = Uri.parse("tel:112")
                         }
-                        context.startActivity(intent)
+                        if (ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.CALL_PHONE
+                            ) == PackageManager.PERMISSION_GRANTED
+                        ) {
+                            context.startActivity(callIntent)
+                        } else {
+                            val dialIntent = Intent(Intent.ACTION_DIAL).apply {
+                                data = Uri.parse("tel:112")
+                            }
+                            context.startActivity(dialIntent)
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = EmergencyRed)
                 ) {
-                    Text("Call 911", color = EmergencyWhite)
+                    Text("Call Emergency (112)", color = EmergencyWhite)
                 }
             },
             dismissButton = {
@@ -392,7 +406,7 @@ fun HomeScreen(
         ) {
             QuickActionCard(
                 title = "Emergency Call",
-                subtitle = "Dial 911 / 112",
+                subtitle = "Dial 112",
                 icon = Icons.Filled.Call,
                 iconTint = EmergencyRed,
                 iconBackgroundColor = EmergencyRedContainer,

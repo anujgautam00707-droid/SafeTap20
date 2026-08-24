@@ -17,15 +17,20 @@ data class TrustedContact(
 )
 
 class TrustedContactsRepository(
-    context: Context
+    private val preferences: android.content.SharedPreferences? = null,
+    initialContacts: List<TrustedContact> = emptyList()
 ) {
 
-    private val preferences = context.applicationContext.getSharedPreferences(
-        PREFERENCES_NAME,
-        Context.MODE_PRIVATE
+    constructor(context: Context) : this(
+        preferences = context.applicationContext.getSharedPreferences(
+            PREFERENCES_NAME,
+            Context.MODE_PRIVATE
+        )
     )
 
-    private val _contacts = MutableStateFlow(loadContacts())
+    private val _contacts = MutableStateFlow(
+        preferences?.let { loadContacts() } ?: initialContacts
+    )
 
     val contacts: StateFlow<List<TrustedContact>> =
         _contacts.asStateFlow()
@@ -126,7 +131,7 @@ class TrustedContactsRepository(
     }
 
     private fun loadContacts(): List<TrustedContact> {
-        val storedContacts = preferences.getString(
+        val storedContacts = preferences?.getString(
             CONTACTS_KEY,
             null
         ) ?: return emptyList()
@@ -202,12 +207,12 @@ class TrustedContactsRepository(
         }
 
         preferences
-            .edit()
-            .putString(
+            ?.edit()
+            ?.putString(
                 CONTACTS_KEY,
                 contactsArray.toString()
             )
-            .apply()
+            ?.apply()
     }
 
     private fun normalizePhoneNumber(

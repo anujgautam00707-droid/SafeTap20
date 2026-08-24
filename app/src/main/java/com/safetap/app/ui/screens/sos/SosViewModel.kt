@@ -4,7 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.safetap.app.data.auth.AuthRepository
 import com.safetap.app.domain.sos.SosCoordinator
+import com.safetap.app.domain.sos.model.LocationTrackingState
 import com.safetap.app.domain.sos.model.SosError
+import com.safetap.app.domain.sos.services.SmsRecipientStatus
+import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,8 +28,16 @@ class SosViewModel(
     val batteryPercentage: StateFlow<Int?> =
         _batteryPercentage.asStateFlow()
 
+    val smsDeliveryStatuses: StateFlow<List<SmsRecipientStatus>> =
+        sosCoordinator.smsDeliveryStatuses
+
+    val liveTrackingState: StateFlow<LocationTrackingState>?
+        get() = sosCoordinator.trackingState
+
     private var countdownJob: Job? = null
     private var delayedCallJob: Job? = null
+    private var sosDispatchJob: Job? = null
+    private var cancelSosJob: Job? = null
 
     init {
         refreshBatteryPercentage()
@@ -49,7 +61,8 @@ class SosViewModel(
     fun startSos() {
         if (
             _uiState.value is SosUiState.Countdown ||
-            _uiState.value is SosUiState.Active
+            _uiState.value is SosUiState.Active ||
+            _uiState.value == SosUiState.CollectingEmergencyData
         ) {
             return
         }
@@ -96,9 +109,9 @@ class SosViewModel(
                 null -> Unit
 
                 else -> {
-                    _uiState.value = SosUiState.Error(
-                        error = error,
-                        message = error.message
+                    showFailure(
+                        throwable = error,
+                        fallback = error
                     )
                 }
             }
@@ -106,12 +119,7 @@ class SosViewModel(
     }
 
     fun triggerImmediately() {
-        countdownJob?.cancel()
-        countdownJob = null
-
-        delayedCallJob?.cancel()
-        delayedCallJob = null
-
+        cancelPendingJobs()
         refreshBatteryPercentage()
 
         viewModelScope.launch {
@@ -131,28 +139,29 @@ class SosViewModel(
 
     fun cancelSos() {
         cancelPendingJobs()
+        _uiState.value = SosUiState.Cancelled
 
-        viewModelScope.launch {
+        cancelSosJob = viewModelScope.launch {
             val result = sosCoordinator.cancelSos()
 
             if (result.isSuccess) {
                 refreshBatteryPercentage()
-                _uiState.value = SosUiState.Cancelled
             } else {
-                showFailure(
-                    throwable = result.exceptionOrNull()
-                )
+                val ex = result.exceptionOrNull()
+                if (ex !is CancellationException && ex !is SosError.Cancelled) {
+                    showFailure(throwable = ex)
+                }
             }
         }
     }
 
     fun resetSos() {
         cancelPendingJobs()
+        _uiState.value = SosUiState.Idle
 
         viewModelScope.launch {
             sosCoordinator.cancelSos()
             refreshBatteryPercentage()
-            _uiState.value = SosUiState.Idle
         }
     }
 
@@ -179,32 +188,43 @@ class SosViewModel(
         triggerImmediately()
     }
 
-    private suspend fun dispatchEmergencySos() {
-        _uiState.value = SosUiState.CollectingEmergencyData
+    private fun dispatchEmergencySos() {
+        cancelPendingJobs()
 
-        val userId =
-            authRepository?.currentUser?.uid ?: FALLBACK_USER_ID
+        sosDispatchJob = viewModelScope.launch {
+            try {
+                _uiState.value = SosUiState.CollectingEmergencyData
 
-        val result = sosCoordinator.triggerSos(
-            userId = userId
-        )
+                val userId =
+                    authRepository?.currentUser?.uid ?: "user_${UUID.randomUUID().toString().take(8)}"
 
-        if (result.isFailure) {
-            showFailure(
-                throwable = result.exceptionOrNull()
-            )
-            return
+                val result = sosCoordinator.triggerSos(
+                    userId = userId
+                )
+
+                if (result.isFailure) {
+                    val ex = result.exceptionOrNull()
+                    if (ex is CancellationException || ex is SosError.Cancelled) {
+                        _uiState.value = SosUiState.Cancelled
+                    } else {
+                        showFailure(throwable = ex)
+                    }
+                    return@launch
+                }
+
+                val emergencyData = result.getOrThrow()
+
+                _batteryPercentage.value =
+                    emergencyData.batteryPercentage
+
+                _uiState.value =
+                    SosUiState.Active(emergencyData)
+
+                schedulePrimaryContactCall()
+            } catch (e: CancellationException) {
+                _uiState.value = SosUiState.Cancelled
+            }
         }
-
-        val emergencyData = result.getOrThrow()
-
-        _batteryPercentage.value =
-            emergencyData.batteryPercentage
-
-        _uiState.value =
-            SosUiState.Active(emergencyData)
-
-        schedulePrimaryContactCall()
     }
 
     private fun schedulePrimaryContactCall() {
@@ -235,8 +255,14 @@ class SosViewModel(
         countdownJob?.cancel()
         countdownJob = null
 
+        sosDispatchJob?.cancel()
+        sosDispatchJob = null
+
         delayedCallJob?.cancel()
         delayedCallJob = null
+
+        cancelSosJob?.cancel()
+        cancelSosJob = null
     }
 
     private fun showFailure(
@@ -263,7 +289,6 @@ class SosViewModel(
         const val MINIMUM_BATTERY_PERCENTAGE = 0
         const val MAXIMUM_BATTERY_PERCENTAGE = 100
 
-        const val DEFAULT_EMERGENCY_NUMBER = "100"
-        const val FALLBACK_USER_ID = "user_placeholder"
+        const val DEFAULT_EMERGENCY_NUMBER = "112"
     }
 }

@@ -83,7 +83,7 @@ fun SettingsScreen(
     var isDarkMode by remember { mutableStateOf(false) }
     var autoShareGps by remember { mutableStateOf(true) }
     var audioSirenOnSos by remember { mutableStateOf(true) }
-    var emergencyNumber by remember { mutableStateOf("911") }
+    var emergencyNumber by remember { mutableStateOf("112") }
     var selectedLanguage by remember { mutableStateOf("English (US)") }
 
     // Dialog controllers
@@ -199,7 +199,7 @@ fun SettingsScreen(
             text = {
                 Column {
                     Text(
-                        text = "Customize the default emergency line dialed when using rapid dispatch (e.g. 911 in US, 112 in EU, 999 in UK, 100 in India).",
+                        text = "Customize the default emergency line dialed when using rapid dispatch (e.g. 112 in India, 999 in UK).",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

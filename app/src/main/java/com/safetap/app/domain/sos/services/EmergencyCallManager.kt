@@ -5,11 +5,11 @@ import android.content.Intent
 interface EmergencyCallManager {
 
     fun getEmergencyDialIntent(
-        emergencyNumber: String = "911"
+        emergencyNumber: String = "112"
     ): Intent
 
     fun launchEmergencyDialer(
-        emergencyNumber: String = "911"
+        emergencyNumber: String = "112"
     ): Result<Unit>
 
     fun getDirectCallIntent(

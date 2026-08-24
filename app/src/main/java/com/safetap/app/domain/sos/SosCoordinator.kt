@@ -3,6 +3,7 @@ package com.safetap.app.domain.sos
 import com.safetap.app.data.contacts.TrustedContactsRepository
 import com.safetap.app.data.sos.SosRemoteDataSource
 import com.safetap.app.domain.sos.model.EmergencyData
+import com.safetap.app.domain.sos.model.LocationTrackingState
 import com.safetap.app.domain.sos.model.SosError
 import com.safetap.app.domain.sos.model.SosStatus
 import com.safetap.app.domain.sos.services.BatteryProvider
@@ -10,6 +11,7 @@ import com.safetap.app.domain.sos.services.EmergencyCallManager
 import com.safetap.app.domain.sos.services.EmergencyNotificationManager
 import com.safetap.app.domain.sos.services.EmergencySmsSender
 import com.safetap.app.domain.sos.services.LocationProvider
+import com.safetap.app.domain.sos.services.LocationTrackingManager
 import com.safetap.app.domain.sos.services.PermissionChecker
 import com.safetap.app.domain.sos.services.SmsRecipientStatus
 import java.util.UUID
@@ -29,6 +31,7 @@ class SosCoordinator(
     private val emergencySmsSender: EmergencySmsSender,
     private val trustedContactsRepository: TrustedContactsRepository,
     private val remoteDataSource: SosRemoteDataSource,
+    private val locationTrackingManager: LocationTrackingManager? = null,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
 
@@ -36,6 +39,9 @@ class SosCoordinator(
 
     val smsDeliveryStatuses: StateFlow<List<SmsRecipientStatus>> =
         emergencySmsSender.deliveryStatuses
+
+    val trackingState: StateFlow<LocationTrackingState>?
+        get() = locationTrackingManager?.trackingState
 
     fun checkPermissions(): Result<Unit> {
         return if (permissionChecker.hasRequiredPermissions()) {
@@ -72,9 +78,10 @@ class SosCoordinator(
     }
 
     suspend fun triggerSos(
-        userId: String = "user_placeholder",
+        userId: String = "anonymous_user",
         emergencyMessage: String? = null
     ): Result<EmergencyData> = withContext(ioDispatcher) {
+        var generatedSosId: String? = null
         try {
             val permissionResult = checkPermissions()
 
@@ -83,17 +90,6 @@ class SosCoordinator(
                     permissionResult.exceptionOrNull()
                         ?: SosError.PermissionDenied()
                 )
-            }
-
-            if (!locationProvider.isGpsEnabled()) {
-                val lastKnownLocation =
-                    locationProvider.getLastKnownLocation()
-
-                if (lastKnownLocation == null) {
-                    return@withContext Result.failure(
-                        SosError.GpsDisabled()
-                    )
-                }
             }
 
             val trustedContacts =
@@ -123,6 +119,8 @@ class SosCoordinator(
                 batteryProvider.getBatteryPercentage()
 
             val sosId = UUID.randomUUID().toString()
+            generatedSosId = sosId
+            val liveToken = EmergencyData.generateCryptographicToken()
 
             val alertMessage = emergencyMessage
                 ?: "EMERGENCY: A SafeTap user triggered an SOS alert and may need assistance."
@@ -135,9 +133,11 @@ class SosCoordinator(
                 locationAccuracy = locationAccuracy,
                 batteryPercentage = batteryPercentage,
                 timestamp = System.currentTimeMillis(),
+                startedAt = System.currentTimeMillis(),
                 status = SosStatus.ACTIVE,
                 isLastKnownLocation = isLastKnownLocation,
-                emergencyMessage = alertMessage
+                emergencyMessage = alertMessage,
+                liveLocationToken = liveToken
             )
 
             val recipients = trustedContacts.map { contact ->
@@ -165,28 +165,37 @@ class SosCoordinator(
 
             currentActiveSosId = sosId
 
+            // Start continuous high accuracy foreground location tracking
+            locationTrackingManager?.startTracking(
+                sosId = sosId,
+                liveLocationToken = liveToken
+            )
+
             notificationManager.showActiveSosNotification(
                 emergencyData
             )
 
-            val remoteResult =
+            // Upload initial SOS session to Firebase Realtime Database (non-blocking for SMS)
+            val remoteResult = runCatching {
                 remoteDataSource.createSosEvent(emergencyData)
-
-            if (remoteResult.isFailure) {
-                return@withContext Result.failure(
-                    SosError.UnexpectedError(
-                        remoteResult.exceptionOrNull()
-                            ?: IllegalStateException(
-                                "The SOS event could not be stored."
-                            )
-                    )
-                )
-            }
+            }.getOrElse { Result.failure(it) }
 
             Result.success(emergencyData)
         } catch (exception: CancellationException) {
+            locationTrackingManager?.stopTracking()
+            notificationManager.cancelSosNotification()
+            generatedSosId?.let { id ->
+                runCatching { remoteDataSource.closeSosEvent(id) }
+            }
+            currentActiveSosId = null
             Result.failure(SosError.Cancelled())
         } catch (exception: Exception) {
+            locationTrackingManager?.stopTracking()
+            notificationManager.cancelSosNotification()
+            generatedSosId?.let { id ->
+                runCatching { remoteDataSource.closeSosEvent(id) }
+            }
+            currentActiveSosId = null
             Result.failure(SosError.UnexpectedError(exception))
         }
     }
@@ -220,26 +229,19 @@ class SosCoordinator(
     ): Result<Unit> = withContext(ioDispatcher) {
         try {
             val targetSosId = sosId ?: currentActiveSosId
+            currentActiveSosId = null
+
+            // Stop foreground location tracking
+            locationTrackingManager?.stopTracking()
 
             notificationManager.cancelSosNotification()
 
             if (targetSosId != null) {
-                val closeResult =
+                runCatching {
                     remoteDataSource.closeSosEvent(targetSosId)
-
-                if (closeResult.isFailure) {
-                    return@withContext Result.failure(
-                        SosError.UnexpectedError(
-                            closeResult.exceptionOrNull()
-                                ?: IllegalStateException(
-                                    "The SOS event could not be closed."
-                                )
-                        )
-                    )
                 }
             }
 
-            currentActiveSosId = null
             Result.success(Unit)
         } catch (exception: CancellationException) {
             Result.failure(SosError.Cancelled())
@@ -253,7 +255,7 @@ class SosCoordinator(
     }
 
     fun openEmergencyDialer(
-        emergencyNumber: String = "100"
+        emergencyNumber: String = "112"
     ): Result<Unit> {
         return callManager.launchEmergencyDialer(
             emergencyNumber = emergencyNumber
@@ -262,7 +264,7 @@ class SosCoordinator(
 
     fun getActiveSosId(): String? = currentActiveSosId
 
-    private fun buildEmergencySmsMessage(
+    fun buildEmergencySmsMessage(
         emergencyData: EmergencyData
     ): String {
         val mapsLink =
@@ -270,11 +272,14 @@ class SosCoordinator(
                     "${emergencyData.latitude}," +
                     emergencyData.longitude
 
+        val liveLink = emergencyData.getLiveTrackingUrl()
+
         return buildString {
             appendLine("SafeTap emergency alert")
             appendLine()
             appendLine(emergencyData.emergencyMessage)
             appendLine("Location: $mapsLink")
+            appendLine("Live Track: $liveLink")
             append("Battery: ${emergencyData.batteryPercentage}%")
         }
     }

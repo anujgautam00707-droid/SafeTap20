@@ -1,5 +1,10 @@
 package com.safetap.app.ui.screens.sos
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -29,10 +34,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -43,10 +51,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,12 +65,16 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.safetap.app.di.SafeTapViewModelFactory
+import com.safetap.app.domain.sos.model.LocationTrackingState
+import com.safetap.app.domain.sos.services.SmsDeliveryState
 import com.safetap.app.ui.theme.EmergencyRed
 import com.safetap.app.ui.theme.EmergencyRedContainer
 import com.safetap.app.ui.theme.EmergencyRedDark
@@ -73,41 +88,138 @@ import com.safetap.app.ui.theme.WarningAmber
 fun SosScreen(
     viewModel: SosViewModel = viewModel(factory = SafeTapViewModelFactory)
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val batteryPercentage by
-    viewModel.batteryPercentage.collectAsStateWithLifecycle()
+    val batteryPercentage by viewModel.batteryPercentage.collectAsStateWithLifecycle()
+    val smsStatuses by viewModel.smsDeliveryStatuses.collectAsStateWithLifecycle()
 
-    val isCheckingPermissions =
-        uiState == SosUiState.CheckingPermissions
+    val trackingState by (viewModel.liveTrackingState?.collectAsStateWithLifecycle()
+        ?: remember { mutableStateOf(LocationTrackingState.Idle) })
 
-    val isCountdown =
-        uiState is SosUiState.Countdown
+    var showPermissionRationale by remember { mutableStateOf(false) }
 
-    val isEmergencyActive =
-        uiState == SosUiState.CollectingEmergencyData ||
-                uiState is SosUiState.ReadyToSend ||
-                uiState is SosUiState.Active
+    val requiredPermissions = remember {
+        buildList {
+            add(Manifest.permission.ACCESS_FINE_LOCATION)
+            add(Manifest.permission.ACCESS_COARSE_LOCATION)
+            add(Manifest.permission.SEND_SMS)
+            add(Manifest.permission.CALL_PHONE)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
 
-    val usesCountdownVisuals =
-        isCheckingPermissions || isCountdown
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        val fineLocationGranted = results[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        val coarseLocationGranted = results[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        val smsGranted = results[Manifest.permission.SEND_SMS] == true
+        val callGranted = results[Manifest.permission.CALL_PHONE] == true
 
-    val isSosInProgress =
-        usesCountdownVisuals || isEmergencyActive
+        if ((fineLocationGranted || coarseLocationGranted) && smsGranted && callGranted) {
+            viewModel.startSos()
+        } else {
+            showPermissionRationale = true
+        }
+    }
 
-    val countdownSeconds =
-        (uiState as? SosUiState.Countdown)?.secondsRemaining ?: 5
+    fun hasAllRequiredPermissions(): Boolean {
+        val hasLocation = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
 
-    val infiniteTransition =
-        rememberInfiniteTransition(label = "SosEmergencyPulse")
+        val hasSms = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.SEND_SMS
+        ) == PackageManager.PERMISSION_GRANTED
+
+        val hasCall = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.CALL_PHONE
+        ) == PackageManager.PERMISSION_GRANTED
+
+        return hasLocation && hasSms && hasCall
+    }
+
+    fun handleSosInitiation(immediate: Boolean = false) {
+        if (hasAllRequiredPermissions()) {
+            if (immediate) {
+                viewModel.triggerImmediately()
+            } else {
+                viewModel.startSos()
+            }
+        } else {
+            permissionLauncher.launch(requiredPermissions.toTypedArray())
+        }
+    }
+
+    if (showPermissionRationale) {
+        AlertDialog(
+            onDismissRequest = { showPermissionRationale = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Filled.Warning,
+                    contentDescription = null,
+                    tint = WarningAmber,
+                    modifier = Modifier.size(36.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Emergency Permissions Required",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("SafeTap needs the following permissions to protect you during an SOS:")
+                    Text("• Location: To broadcast your live GPS tracking to emergency contacts.")
+                    Text("• SMS: To dispatch the immediate SOS alert with your live map link.")
+                    Text("• Phone: To auto-dial your designated primary trusted contact.")
+                    Text("• Notifications: To run the background live location tracking service.")
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showPermissionRationale = false
+                        permissionLauncher.launch(requiredPermissions.toTypedArray())
+                    }
+                ) {
+                    Text("Grant Permissions")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPermissionRationale = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    val isCheckingPermissions = uiState == SosUiState.CheckingPermissions
+    val isCountdown = uiState is SosUiState.Countdown
+    val isEmergencyActive = uiState == SosUiState.CollectingEmergencyData ||
+            uiState is SosUiState.ReadyToSend ||
+            uiState is SosUiState.Active
+
+    val usesCountdownVisuals = isCheckingPermissions || isCountdown
+    val isSosInProgress = usesCountdownVisuals || isEmergencyActive
+    val countdownSeconds = (uiState as? SosUiState.Countdown)?.secondsRemaining ?: 5
+
+    val infiniteTransition = rememberInfiniteTransition(label = "SosEmergencyPulse")
 
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.25f,
         animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 1200,
-                easing = FastOutSlowInEasing
-            ),
+            animation = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "SosScale"
@@ -117,10 +229,7 @@ fun SosScreen(
         initialValue = 0.5f,
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 1200,
-                easing = FastOutSlowInEasing
-            ),
+            animation = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "SosAlpha"
@@ -137,29 +246,23 @@ fun SosScreen(
                             Color(0xFF1E0505),
                             MaterialTheme.colorScheme.background
                         )
-
                         usesCountdownVisuals -> listOf(
                             Color(0xFF2E1005),
                             Color(0xFF1E0A05),
                             MaterialTheme.colorScheme.background
                         )
-
                         else -> listOf(
                             MaterialTheme.colorScheme.background,
-                            MaterialTheme.colorScheme.surfaceVariant.copy(
-                                alpha = 0.3f
-                            )
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                         )
                     }
                 )
             )
             .verticalScroll(rememberScrollState())
-            .padding(
-                horizontal = 20.dp,
-                vertical = 16.dp
-            ),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Header
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -177,43 +280,25 @@ fun SosScreen(
 
                 Text(
                     text = when (val state = uiState) {
-                        SosUiState.Idle ->
-                            "Tap button to start 5-second countdown"
-
-                        SosUiState.CheckingPermissions ->
-                            "Checking emergency permissions"
-
-                        is SosUiState.Countdown ->
-                            "Dispatching SOS in ${state.secondsRemaining}s"
-
-                        SosUiState.CollectingEmergencyData ->
-                            "Preparing emergency broadcast"
-
-                        is SosUiState.ReadyToSend ->
-                            "Emergency data ready"
-
-                        is SosUiState.Active ->
-                            "EMERGENCY BROADCAST ACTIVE"
-
-                        SosUiState.Cancelled ->
-                            "SOS alert cancelled"
-
-                        is SosUiState.Error ->
-                            state.message
+                        SosUiState.Idle -> "Tap button to start 5-second countdown"
+                        SosUiState.CheckingPermissions -> "Checking emergency permissions"
+                        is SosUiState.Countdown -> "Dispatching SOS in ${state.secondsRemaining}s"
+                        SosUiState.CollectingEmergencyData -> "Acquiring GPS & starting live stream"
+                        is SosUiState.ReadyToSend -> "Emergency data ready"
+                        is SosUiState.Active -> "EMERGENCY BROADCAST ACTIVE"
+                        SosUiState.Cancelled -> "SOS alert cancelled"
+                        is SosUiState.Error -> state.message
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = when (uiState) {
                         SosUiState.CheckingPermissions,
                         is SosUiState.Countdown -> WarningAmber
-
                         SosUiState.CollectingEmergencyData,
                         is SosUiState.ReadyToSend,
                         is SosUiState.Active,
                         is SosUiState.Error -> EmergencyRedLight
-
                         SosUiState.Idle,
-                        SosUiState.Cancelled ->
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                        SosUiState.Cancelled -> MaterialTheme.colorScheme.onSurfaceVariant
                     },
                     fontWeight = FontWeight.SemiBold
                 )
@@ -226,20 +311,15 @@ fun SosScreen(
                         when (uiState) {
                             SosUiState.CheckingPermissions,
                             is SosUiState.Countdown -> WarningAmber
-
                             SosUiState.CollectingEmergencyData,
                             is SosUiState.ReadyToSend,
                             is SosUiState.Active,
                             is SosUiState.Error -> EmergencyRed
-
                             SosUiState.Idle,
                             SosUiState.Cancelled -> SafeGreen
                         }
                     )
-                    .padding(
-                        horizontal = 10.dp,
-                        vertical = 5.dp
-                    )
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
                 Text(
                     text = when (uiState) {
@@ -248,7 +328,7 @@ fun SosScreen(
                         is SosUiState.Countdown -> "COUNTING"
                         SosUiState.CollectingEmergencyData -> "PREPARING"
                         is SosUiState.ReadyToSend -> "READY"
-                        is SosUiState.Active -> "ALERTING"
+                        is SosUiState.Active -> "LIVE SOS"
                         SosUiState.Cancelled -> "CANCELLED"
                         is SosUiState.Error -> "ERROR"
                     },
@@ -262,6 +342,7 @@ fun SosScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // SOS Button
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier.size(240.dp)
@@ -272,13 +353,7 @@ fun SosScreen(
                         .size(230.dp)
                         .scale(pulseScale)
                         .background(
-                            color = (
-                                    if (isEmergencyActive) {
-                                        EmergencyRed
-                                    } else {
-                                        WarningAmber
-                                    }
-                                    ).copy(alpha = pulseAlpha),
+                            color = (if (isEmergencyActive) EmergencyRed else WarningAmber).copy(alpha = pulseAlpha),
                             shape = CircleShape
                         )
                 )
@@ -287,10 +362,7 @@ fun SosScreen(
             if (usesCountdownVisuals) {
                 val animatedProgress by animateFloatAsState(
                     targetValue = countdownSeconds / 5f,
-                    animationSpec = tween(
-                        durationMillis = 900,
-                        easing = LinearEasing
-                    ),
+                    animationSpec = tween(durationMillis = 900, easing = LinearEasing),
                     label = "CountdownArc"
                 )
 
@@ -300,8 +372,7 @@ fun SosScreen(
                     color = WarningAmber,
                     strokeWidth = 8.dp,
                     trackColor = WarningAmber.copy(alpha = 0.2f),
-                    strokeCap =
-                        ProgressIndicatorDefaults.CircularDeterminateStrokeCap
+                    strokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap
                 )
             } else if (isEmergencyActive) {
                 CircularProgressIndicator(
@@ -331,13 +402,11 @@ fun SosScreen(
                                     EmergencyRed,
                                     EmergencyRedDark
                                 )
-
                                 usesCountdownVisuals -> listOf(
                                     Color(0xFFFFB74D),
                                     WarningAmber,
                                     Color(0xFFE65100)
                                 )
-
                                 else -> listOf(
                                     EmergencyRedLight,
                                     EmergencyRed,
@@ -347,69 +416,50 @@ fun SosScreen(
                         )
                     )
                     .clickable(
-                        interactionSource =
-                            remember { MutableInteractionSource() },
-                        indication = ripple(
-                            bounded = true,
-                            color = EmergencyWhite
-                        ),
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(bounded = true, color = EmergencyWhite),
                         onClick = {
                             when (uiState) {
-                                SosUiState.Idle ->
-                                    viewModel.startSos()
-
-                                is SosUiState.Countdown ->
-                                    viewModel.triggerImmediately()
-
+                                SosUiState.Idle -> handleSosInitiation(immediate = false)
+                                is SosUiState.Countdown -> handleSosInitiation(immediate = true)
                                 else -> Unit
                             }
                         }
                     )
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     when {
                         usesCountdownVisuals -> {
                             Text(
                                 text = "${countdownSeconds}s",
                                 color = EmergencyWhite,
-                                style =
-                                    MaterialTheme.typography.displayLarge,
+                                style = MaterialTheme.typography.displayLarge,
                                 fontWeight = FontWeight.Black
                             )
-
                             Text(
                                 text = "TAP TO TRIGGER NOW",
-                                color =
-                                    EmergencyWhite.copy(alpha = 0.9f),
+                                color = EmergencyWhite.copy(alpha = 0.9f),
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.8.sp
                             )
                         }
-
                         isEmergencyActive -> {
                             Icon(
-                                imageVector =
-                                    Icons.Filled.NotificationsActive,
+                                imageVector = Icons.Filled.NotificationsActive,
                                 contentDescription = null,
                                 tint = EmergencyWhite,
                                 modifier = Modifier.size(44.dp)
                             )
-
                             Spacer(modifier = Modifier.height(4.dp))
-
                             Text(
                                 text = "ACTIVE",
                                 color = EmergencyWhite,
-                                style =
-                                    MaterialTheme.typography.headlineMedium,
+                                style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = 1.5.sp
                             )
                         }
-
                         else -> {
                             Icon(
                                 imageVector = Icons.Filled.Warning,
@@ -417,22 +467,17 @@ fun SosScreen(
                                 tint = EmergencyWhite,
                                 modifier = Modifier.size(44.dp)
                             )
-
                             Spacer(modifier = Modifier.height(4.dp))
-
                             Text(
                                 text = "SOS",
                                 color = EmergencyWhite,
-                                style =
-                                    MaterialTheme.typography.headlineLarge,
+                                style = MaterialTheme.typography.headlineLarge,
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = 2.sp
                             )
-
                             Text(
                                 text = "START 5S TIMER",
-                                color =
-                                    EmergencyWhite.copy(alpha = 0.85f),
+                                color = EmergencyWhite.copy(alpha = 0.85f),
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.8.sp
@@ -445,16 +490,14 @@ fun SosScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        // Action Buttons
         if (uiState != SosUiState.Idle) {
             Button(
                 onClick = {
                     when (uiState) {
                         SosUiState.Cancelled,
-                        is SosUiState.Error ->
-                            viewModel.resetSos()
-
-                        else ->
-                            viewModel.cancelSos()
+                        is SosUiState.Error -> viewModel.resetSos()
+                        else -> viewModel.cancelSos()
                     }
                 },
                 modifier = Modifier
@@ -462,13 +505,10 @@ fun SosScreen(
                     .height(54.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor =
-                        MaterialTheme.colorScheme.surface,
-                    contentColor =
-                        MaterialTheme.colorScheme.onSurface
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface
                 ),
-                elevation =
-                    ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Cancel,
@@ -491,7 +531,7 @@ fun SosScreen(
             }
         } else {
             OutlinedButton(
-                onClick = viewModel::startSos,
+                onClick = { handleSosInitiation(immediate = false) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
@@ -506,10 +546,135 @@ fun SosScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        // Status Cards
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Live Location Status Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = when {
+                        isEmergencyActive && trackingState is LocationTrackingState.Tracking -> EmergencyRedContainer
+                        isEmergencyActive -> EmergencyRedContainer.copy(alpha = 0.7f)
+                        else -> MaterialTheme.colorScheme.surface
+                    }
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(CircleShape)
+                            .background(
+                                when {
+                                    isEmergencyActive && trackingState is LocationTrackingState.Tracking -> EmergencyRed
+                                    isEmergencyActive -> WarningAmber
+                                    else -> SafeGreenContainer
+                                }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = when {
+                                isEmergencyActive -> Icons.Filled.Sensors
+                                else -> Icons.Filled.GpsFixed
+                            },
+                            contentDescription = null,
+                            tint = when {
+                                isEmergencyActive -> EmergencyWhite
+                                else -> SafeGreen
+                            },
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = when {
+                                    isEmergencyActive && trackingState is LocationTrackingState.Tracking -> "🔴 Live Location ON"
+                                    isEmergencyActive && trackingState is LocationTrackingState.LocationUnavailable -> "⚠️ Live Location Searching"
+                                    isEmergencyActive -> "Connecting Live GPS..."
+                                    else -> "GPS Location Standby"
+                                },
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = when {
+                                    isEmergencyActive -> EmergencyRed
+                                    else -> MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+
+                            if (isEmergencyActive && trackingState is LocationTrackingState.Tracking) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(EmergencyRed)
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "LIVE SYNC",
+                                        color = EmergencyWhite,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Black
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = when (val tracking = trackingState) {
+                                is LocationTrackingState.Tracking -> {
+                                    "%.5f°, %.5f° • Accuracy ±%.1fm • Update #${tracking.updatesCount}".format(
+                                        tracking.latitude,
+                                        tracking.longitude,
+                                        tracking.accuracy
+                                    )
+                                }
+                                is LocationTrackingState.LocationUnavailable -> {
+                                    tracking.reason
+                                }
+                                is LocationTrackingState.Error -> {
+                                    tracking.message
+                                }
+                                LocationTrackingState.Initializing -> {
+                                    "Starting high-accuracy foreground location tracking service..."
+                                }
+                                else -> {
+                                    if (isEmergencyActive) {
+                                        val data = (uiState as? SosUiState.Active)?.emergencyData
+                                        if (data != null && data.isLocationAvailable) {
+                                            "%.5f°, %.5f° • Accuracy ±%.1fm".format(data.latitude, data.longitude, data.locationAccuracy)
+                                        } else {
+                                            "Acquiring high accuracy location lock..."
+                                        }
+                                    } else {
+                                        "High precision GPS coordinates will be continuously streamed"
+                                    }
+                                }
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // Emergency SMS Broadcast Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -520,8 +685,7 @@ fun SosScreen(
                         MaterialTheme.colorScheme.surface
                     }
                 ),
-                elevation =
-                    CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -567,8 +731,7 @@ fun SosScreen(
                             } else {
                                 "Emergency Dispatch Standby"
                             },
-                            style =
-                                MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (isEmergencyActive) {
                                 EmergencyRed
@@ -579,111 +742,39 @@ fun SosScreen(
 
                         Spacer(modifier = Modifier.height(2.dp))
 
+                        val totalSms = smsStatuses.size
+                        val sentSms = smsStatuses.count { it.state == SmsDeliveryState.SENT || it.state == SmsDeliveryState.DELIVERED }
+                        val failedSms = smsStatuses.count { it.state == SmsDeliveryState.FAILED }
+
                         Text(
                             text = if (isEmergencyActive) {
-                                "Alerting 3 trusted contacts with live audio & location"
+                                if (totalSms > 0) {
+                                    if (failedSms > 0) {
+                                        "SMS: $sentSms/$totalSms sent ($failedSms failed) • Live web link attached"
+                                    } else {
+                                        "SMS: $sentSms/$totalSms contacts alerted • Live web link attached"
+                                    }
+                                } else {
+                                    "Dispatching SMS with live location link to all contacts..."
+                                }
                             } else {
-                                "3 contacts will be alerted immediately on trigger"
+                                "Contacts will be alerted immediately with a live tracking link"
                             },
-                            style =
-                                MaterialTheme.typography.bodySmall,
-                            color =
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
 
+            // Battery Status Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor =
-                        MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
-                elevation =
-                    CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .background(SafeGreenContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.GpsFixed,
-                            contentDescription = null,
-                            tint = SafeGreen,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(14.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment =
-                                Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "GPS Location Locked",
-                                style =
-                                    MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color =
-                                    MaterialTheme.colorScheme.onSurface
-                            )
-
-                            Spacer(modifier = Modifier.width(6.dp))
-
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(SafeGreenContainer)
-                                    .padding(
-                                        horizontal = 6.dp,
-                                        vertical = 2.dp
-                                    )
-                            ) {
-                                Text(
-                                    text = "HIGH PRECISION",
-                                    color = SafeGreen,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        Text(
-                            text =
-                                "37.7749° N, 122.4194° W • Accuracy ±3.5m",
-                            style =
-                                MaterialTheme.typography.bodySmall,
-                            color =
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor =
-                        MaterialTheme.colorScheme.surface
-                ),
-                elevation =
-                    CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -699,8 +790,7 @@ fun SosScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector =
-                                Icons.Filled.BatteryChargingFull,
+                            imageVector = Icons.Filled.BatteryChargingFull,
                             contentDescription = null,
                             tint = Color(0xFF0284C7),
                             modifier = Modifier.size(24.dp)
@@ -714,21 +804,17 @@ fun SosScreen(
                             text = batteryPercentage?.let { percentage ->
                                 "Battery Status: $percentage%"
                             } ?: "Battery Status: Reading...",
-                            style =
-                                MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color =
-                                MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Spacer(modifier = Modifier.height(2.dp))
 
                         Text(
-                            text = "Live reading from this device",
-                            style =
-                                MaterialTheme.typography.bodySmall,
-                            color =
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            text = "Synchronized in emergency broadcast payload",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
