@@ -1,5 +1,7 @@
 package com.safetap.app.ui.screens.sos
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -76,6 +78,21 @@ fun SosScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val batteryPercentage by
     viewModel.batteryPercentage.collectAsStateWithLifecycle()
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { result ->
+        val allGranted = result.values.all { it }
+        viewModel.onPermissionsResult(allGranted)
+    }
+
+    androidx.compose.runtime.LaunchedEffect(uiState) {
+        if (uiState is SosUiState.PermissionsRequired) {
+            permissionLauncher.launch(
+                (uiState as SosUiState.PermissionsRequired).permissions.toTypedArray()
+            )
+        }
+    }
 
     val isCheckingPermissions =
         uiState == SosUiState.CheckingPermissions
@@ -183,6 +200,9 @@ fun SosScreen(
                         SosUiState.CheckingPermissions ->
                             "Checking emergency permissions"
 
+                        is SosUiState.PermissionsRequired ->
+                            "Permissions required to continue"
+
                         is SosUiState.Countdown ->
                             "Dispatching SOS in ${state.secondsRemaining}s"
 
@@ -204,6 +224,7 @@ fun SosScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = when (uiState) {
                         SosUiState.CheckingPermissions,
+                        is SosUiState.PermissionsRequired,
                         is SosUiState.Countdown -> WarningAmber
 
                         SosUiState.CollectingEmergencyData,
@@ -225,6 +246,7 @@ fun SosScreen(
                     .background(
                         when (uiState) {
                             SosUiState.CheckingPermissions,
+                            is SosUiState.PermissionsRequired,
                             is SosUiState.Countdown -> WarningAmber
 
                             SosUiState.CollectingEmergencyData,
@@ -245,6 +267,7 @@ fun SosScreen(
                     text = when (uiState) {
                         SosUiState.Idle -> "ARMED"
                         SosUiState.CheckingPermissions -> "CHECKING"
+                        is SosUiState.PermissionsRequired -> "REQUIRED"
                         is SosUiState.Countdown -> "COUNTING"
                         SosUiState.CollectingEmergencyData -> "PREPARING"
                         is SosUiState.ReadyToSend -> "READY"

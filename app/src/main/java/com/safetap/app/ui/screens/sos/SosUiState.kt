@@ -6,6 +6,7 @@ import com.safetap.app.domain.sos.model.SosError
 sealed interface SosUiState {
     object Idle : SosUiState
     object CheckingPermissions : SosUiState
+    data class PermissionsRequired(val permissions: List<String>) : SosUiState
     data class Countdown(val secondsRemaining: Int = 5) : SosUiState
     object CollectingEmergencyData : SosUiState
     data class ReadyToSend(val emergencyData: EmergencyData) : SosUiState

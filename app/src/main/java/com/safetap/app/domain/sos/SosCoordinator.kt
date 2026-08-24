@@ -39,16 +39,12 @@ class SosCoordinator(
     val smsDeliveryStatuses: StateFlow<List<SmsRecipientStatus>> =
         emergencySmsSender.deliveryStatuses
 
+    fun hasRequiredPermissions(): Boolean = permissionChecker.hasRequiredPermissions()
+
+    fun getMissingPermissions(): List<String> = permissionChecker.getMissingPermissions()
+
     fun checkPermissions(): Result<Unit> {
-        return if (permissionChecker.hasRequiredPermissions()) {
-            Result.success(Unit)
-        } else {
-            Result.failure(
-                SosError.PermissionDenied(
-                    "Location, SMS, and Phone permissions are required to activate SOS."
-                )
-            )
-        }
+        return Result.success(Unit)
     }
 
     suspend fun getBatteryPercentage(): Int = withContext(ioDispatcher) {
@@ -78,42 +74,12 @@ class SosCoordinator(
         emergencyMessage: String? = null
     ): Result<EmergencyData> = withContext(ioDispatcher) {
         try {
-            val permissionResult = checkPermissions()
-
-            if (permissionResult.isFailure) {
-                return@withContext Result.failure(
-                    permissionResult.exceptionOrNull()
-                        ?: SosError.PermissionDenied()
-                )
-            }
-
-            if (!locationProvider.isGpsEnabled()) {
-                val lastKnownLocation =
-                    locationProvider.getLastKnownLocation()
-
-                if (lastKnownLocation == null) {
-                    return@withContext Result.failure(
-                        SosError.GpsDisabled()
-                    )
-                }
-            }
-
-            val trustedContacts =
-                trustedContactsRepository.getCurrentContacts()
-
-            if (trustedContacts.isEmpty()) {
-                return@withContext Result.failure(
-                    SosError.UnexpectedError(
-                        IllegalStateException(
-                            "Add at least one trusted contact before sending an SOS."
-                        )
-                    )
-                )
-            }
-
-            val locationResult =
+            // SOS activation is now non-blocking. Individual services handle missing permissions.
+            
+            val locationResult = runCatching {
                 locationProvider.getBestAvailableLocation()
                     ?: locationProvider.getLastKnownLocation()
+            }.getOrNull()
 
             if (locationResult != null) {
                 appStatusRepository.updateLocationSynchronized()
@@ -125,8 +91,9 @@ class SosCoordinator(
             val isLastKnownLocation =
                 locationResult?.isLastKnownLocation ?: false
 
-            val batteryPercentage =
+            val batteryPercentage = runCatching {
                 batteryProvider.getBatteryPercentage()
+            }.getOrDefault(100)
 
             val sosId = UUID.randomUUID().toString()
 
@@ -146,26 +113,16 @@ class SosCoordinator(
                 emergencyMessage = alertMessage
             )
 
-            val recipients = trustedContacts.map { contact ->
+            val recipients = trustedContactsRepository.getCurrentContacts().map { contact ->
                 contact.phone
             }
 
-            // Prevent callback results from an older SOS appearing in the new one.
-            emergencySmsSender.clearDeliveryStatuses()
-
-            val smsResult = emergencySmsSender.sendEmergencyMessage(
-                recipients = recipients,
-                message = buildEmergencySmsMessage(emergencyData)
-            )
-
-            if (smsResult.isFailure) {
-                return@withContext Result.failure(
-                    SosError.UnexpectedError(
-                        smsResult.exceptionOrNull()
-                            ?: IllegalStateException(
-                                "The emergency SMS could not be sent."
-                            )
-                    )
+            if (recipients.isNotEmpty()) {
+                // Attempt SMS independently. Failure does not terminate SOS.
+                emergencySmsSender.clearDeliveryStatuses()
+                emergencySmsSender.sendEmergencyMessage(
+                    recipients = recipients,
+                    message = buildEmergencySmsMessage(emergencyData)
                 )
             }
 
@@ -273,16 +230,22 @@ class SosCoordinator(
     private fun buildEmergencySmsMessage(
         emergencyData: EmergencyData
     ): String {
-        val mapsLink =
-            "https://maps.google.com/?q=" +
-                    "${emergencyData.latitude}," +
-                    emergencyData.longitude
+        // We avoid labeling 0.0 as a real location if it appears to be a fallback.
+        val hasLocation = emergencyData.latitude != 0.0 || emergencyData.longitude != 0.0
 
         return buildString {
             appendLine("SafeTap emergency alert")
             appendLine()
             appendLine(emergencyData.emergencyMessage)
-            appendLine("Location: $mapsLink")
+            if (hasLocation) {
+                val mapsLink =
+                    "https://maps.google.com/?q=" +
+                            "${emergencyData.latitude}," +
+                            emergencyData.longitude
+                appendLine("Location: $mapsLink")
+            } else {
+                appendLine("Location: Unavailable")
+            }
             append("Battery: ${emergencyData.batteryPercentage}%")
         }
     }
