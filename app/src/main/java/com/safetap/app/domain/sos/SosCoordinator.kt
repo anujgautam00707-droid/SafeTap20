@@ -210,7 +210,7 @@ class SosCoordinator(
     }
 
     fun openEmergencyDialer(
-        emergencyNumber: String = "100"
+        emergencyNumber: String = "112"
     ): Result<Unit> {
         return callManager.launchEmergencyDialer(
             emergencyNumber = emergencyNumber

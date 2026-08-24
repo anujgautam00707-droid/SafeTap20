@@ -169,7 +169,7 @@ class DefaultEmergencyCallManager(
 
     private companion object {
         const val TELEPHONE_SCHEME = "tel"
-        const val DEFAULT_EMERGENCY_NUMBER = "100"
+        const val DEFAULT_EMERGENCY_NUMBER = "112"
         const val MINIMUM_EMERGENCY_NUMBER_DIGITS = 3
         const val MINIMUM_CONTACT_NUMBER_DIGITS = 7
         const val MAXIMUM_PHONE_NUMBER_DIGITS = 15
