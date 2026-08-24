@@ -49,12 +49,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.safetap.app.R
 import com.safetap.app.data.contacts.TrustedContact
 import com.safetap.app.di.SafeTapViewModelFactory
 import com.safetap.app.ui.theme.EmergencyRed
@@ -68,24 +70,6 @@ private data class SampleContact(
     val name: String,
     val relationship: String,
     val phone: String
-)
-
-private val sampleContacts = listOf(
-    SampleContact(
-        name = "Sarah Jenkins",
-        relationship = "Sister",
-        phone = "+15552345678"
-    ),
-    SampleContact(
-        name = "David Miller",
-        relationship = "Father",
-        phone = "+15558765432"
-    ),
-    SampleContact(
-        name = "Dr. Emily Watson",
-        relationship = "Family Doctor",
-        phone = "+15553456789"
-    )
 )
 
 private val contactAvatarColors = listOf(
@@ -106,6 +90,24 @@ fun TrustedContactsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val contactsList = uiState.contacts
 
+    val sampleContacts = listOf(
+        SampleContact(
+            name = "Sarah Jenkins",
+            relationship = "Sister",
+            phone = "+15552345678"
+        ),
+        SampleContact(
+            name = "David Miller",
+            relationship = "Father",
+            phone = "+15558765432"
+        ),
+        SampleContact(
+            name = "Dr. Emily Watson",
+            relationship = "Family Doctor",
+            phone = "+15553456789"
+        )
+    )
+
     var showAddDialog by remember { mutableStateOf(false) }
     var contactToEdit by remember {
         mutableStateOf<TrustedContact?>(null)
@@ -116,7 +118,7 @@ fun TrustedContactsScreen(
 
     if (showAddDialog) {
         ContactFormDialog(
-            title = "Add Trusted Contact",
+            title = stringResource(R.string.add_trusted_contact),
             onDismiss = {
                 showAddDialog = false
                 viewModel.clearError()
@@ -132,7 +134,7 @@ fun TrustedContactsScreen(
 
     contactToEdit?.let { contact ->
         ContactFormDialog(
-            title = "Edit Trusted Contact",
+            title = stringResource(R.string.edit_trusted_contact),
             initialName = contact.name,
             initialPhone = contact.phone,
             initialRelationship = contact.relationship,
@@ -157,13 +159,10 @@ fun TrustedContactsScreen(
                 contactToDelete = null
             },
             title = {
-                Text("Remove Contact?")
+                Text(stringResource(R.string.remove_contact_title))
             },
             text = {
-                Text(
-                    "Are you sure you want to remove ${contact.name} " +
-                            "from your trusted emergency contacts?"
-                )
+                Text(stringResource(R.string.remove_contact_message, contact.name))
             },
             confirmButton = {
                 Button(
@@ -176,7 +175,7 @@ fun TrustedContactsScreen(
                     )
                 ) {
                     Text(
-                        text = "Remove",
+                        text = stringResource(R.string.remove),
                         color = EmergencyWhite
                     )
                 }
@@ -187,7 +186,7 @@ fun TrustedContactsScreen(
                         contactToDelete = null
                     }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -215,17 +214,17 @@ fun TrustedContactsScreen(
             ) {
                 Column {
                     Text(
-                        text = "Trusted Contacts",
+                        text = stringResource(R.string.trusted_contacts_title),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground
                     )
 
                     Text(
-                        text = when (contactsList.size) {
-                            0 -> "0 contacts linked"
-                            1 -> "1 contact linked"
-                            else -> "${contactsList.size} contacts linked"
+                        text = if (contactsList.isEmpty()) {
+                            stringResource(R.string.no_contacts_linked)
+                        } else {
+                            stringResource(R.string.contacts_receive_alerts_desc, contactsList.size)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -245,7 +244,7 @@ fun TrustedContactsScreen(
                             )
                     ) {
                         Text(
-                            text = "${contactsList.size} ${if (contactsList.size == 1) "ALLY" else "ALLIES"}",
+                            text = stringResource(R.string.allies_count_caps, contactsList.size),
                             color = MaterialTheme.colorScheme.primary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
@@ -282,7 +281,7 @@ fun TrustedContactsScreen(
                     Spacer(modifier = Modifier.width(10.dp))
 
                     Text(
-                        text = "Contacts receive your live location and alert broadcast immediately upon SOS activation.",
+                        text = stringResource(R.string.contacts_privacy_notice),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -364,12 +363,12 @@ fun TrustedContactsScreen(
             icon = {
                 Icon(
                     imageVector = Icons.Filled.PersonAdd,
-                    contentDescription = "Add Contact"
+                    contentDescription = stringResource(R.string.add_contact)
                 )
             },
             text = {
                 Text(
-                    text = "Add Contact",
+                    text = stringResource(R.string.add_contact),
                     fontWeight = FontWeight.Bold
                 )
             },
@@ -452,7 +451,7 @@ private fun ContactCard(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Star,
-                            contentDescription = if (contact.isPrimary) "Primary Contact" else "Set as Primary",
+                            contentDescription = if (contact.isPrimary) stringResource(R.string.primary_contact) else stringResource(R.string.set_as_primary),
                             tint = if (contact.isPrimary) WarningAmber else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                             modifier = Modifier.size(16.dp)
                         )
@@ -504,7 +503,7 @@ private fun ContactCard(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Call,
-                    contentDescription = "Call ${contact.name}",
+                    contentDescription = stringResource(R.string.call_contact, contact.name),
                     tint = SafeGreen,
                     modifier = Modifier.size(18.dp)
                 )
@@ -521,7 +520,7 @@ private fun ContactCard(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Edit,
-                    contentDescription = "Edit ${contact.name}",
+                    contentDescription = stringResource(R.string.edit_contact, contact.name),
                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.size(18.dp)
                 )
@@ -542,7 +541,7 @@ private fun ContactCard(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Delete,
-                    contentDescription = "Delete ${contact.name}",
+                    contentDescription = stringResource(R.string.delete_contact, contact.name),
                     tint = EmergencyRed,
                     modifier = Modifier.size(18.dp)
                 )
@@ -584,7 +583,7 @@ private fun EmptyContactsState(
         Spacer(modifier = Modifier.height(20.dp))
 
         Text(
-            text = "No Trusted Contacts Yet",
+            text = stringResource(R.string.no_trusted_contacts_yet),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface
@@ -593,7 +592,7 @@ private fun EmptyContactsState(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Add friends, family members, or caregivers who will receive instant notifications and live tracking whenever you trigger an SOS.",
+            text = stringResource(R.string.no_contacts_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -617,7 +616,7 @@ private fun EmptyContactsState(
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = "Add First Contact",
+                text = stringResource(R.string.add_first_contact),
                 color = EmergencyWhite
             )
         }
@@ -628,7 +627,7 @@ private fun EmptyContactsState(
             onClick = onResetDefaults,
             modifier = Modifier.height(42.dp)
         ) {
-            Text("Load Sample Contacts")
+            Text(stringResource(R.string.load_sample_contacts))
         }
     }
 }
@@ -668,7 +667,7 @@ private fun ContactFormDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = "This contact will receive SOS alerts, live GPS location, and SMS in emergencies.",
+                    text = stringResource(R.string.contact_form_desc),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -679,7 +678,7 @@ private fun ContactFormDialog(
                         name = value
                         if (value.isNotBlank()) nameError = false
                     },
-                    label = { Text("Full Name *") },
+                    label = { Text(stringResource(R.string.full_name_label)) },
                     isError = nameError,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -691,7 +690,7 @@ private fun ContactFormDialog(
                         phone = value
                         if (value.isNotBlank()) phoneError = false
                     },
-                    label = { Text("Phone Number *") },
+                    label = { Text(stringResource(R.string.phone_number_label)) },
                     isError = phoneError || errorMessage != null,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -708,7 +707,7 @@ private fun ContactFormDialog(
                 OutlinedTextField(
                     value = relationship,
                     onValueChange = { value -> relationship = value },
-                    label = { Text("Relationship (e.g. Mom, Partner, Friend)") },
+                    label = { Text(stringResource(R.string.relationship_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -723,12 +722,12 @@ private fun ContactFormDialog(
                     onSave(name, phone, relationship)
                 }
             ) {
-                Text("Save Contact")
+                Text(stringResource(R.string.save_contact))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     )

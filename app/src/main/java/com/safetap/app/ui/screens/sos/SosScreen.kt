@@ -55,6 +55,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -65,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.safetap.app.R
 import com.safetap.app.di.SafeTapViewModelFactory
 import com.safetap.app.ui.theme.EmergencyRed
 import com.safetap.app.ui.theme.EmergencyRedContainer
@@ -191,7 +193,7 @@ fun SosScreen(
         ) {
             Column {
                 Text(
-                    text = "Emergency SOS",
+                    text = stringResource(R.string.emergency_sos),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -200,28 +202,28 @@ fun SosScreen(
                 Text(
                     text = when (val state = uiState) {
                         SosUiState.Idle ->
-                            "One tap away from help"
+                            stringResource(R.string.sos_idle_desc)
 
                         SosUiState.CheckingPermissions ->
-                            "Checking emergency permissions"
+                            stringResource(R.string.sos_checking_permissions)
 
                         is SosUiState.PermissionsRequired ->
-                            "Permissions required to continue"
+                            stringResource(R.string.sos_permissions_required)
 
                         is SosUiState.Countdown ->
-                            "Dispatching SOS in ${state.secondsRemaining}s"
+                            stringResource(R.string.sos_countdown_dispatch, state.secondsRemaining)
 
                         SosUiState.CollectingEmergencyData ->
-                            "Preparing emergency broadcast"
+                            stringResource(R.string.sos_preparing_broadcast)
 
                         is SosUiState.ReadyToSend ->
-                            "Emergency data ready"
+                            stringResource(R.string.sos_data_ready)
 
                         is SosUiState.Active ->
-                            "EMERGENCY BROADCAST ACTIVE"
+                            stringResource(R.string.sos_broadcast_active)
 
                         SosUiState.Cancelled ->
-                            "SOS alert cancelled"
+                            stringResource(R.string.sos_cancelled)
 
                         is SosUiState.Error ->
                             state.message
@@ -270,15 +272,15 @@ fun SosScreen(
             ) {
                 Text(
                     text = when (uiState) {
-                        SosUiState.Idle -> "ARMED"
-                        SosUiState.CheckingPermissions -> "CHECKING"
-                        is SosUiState.PermissionsRequired -> "REQUIRED"
-                        is SosUiState.Countdown -> "COUNTING"
-                        SosUiState.CollectingEmergencyData -> "PREPARING"
-                        is SosUiState.ReadyToSend -> "READY"
-                        is SosUiState.Active -> "ALERTING"
-                        SosUiState.Cancelled -> "CANCELLED"
-                        is SosUiState.Error -> "ERROR"
+                        SosUiState.Idle -> stringResource(R.string.sos_status_armed)
+                        SosUiState.CheckingPermissions -> stringResource(R.string.sos_status_checking)
+                        is SosUiState.PermissionsRequired -> stringResource(R.string.sos_status_required)
+                        is SosUiState.Countdown -> stringResource(R.string.sos_status_counting)
+                        SosUiState.CollectingEmergencyData -> stringResource(R.string.sos_status_preparing)
+                        is SosUiState.ReadyToSend -> stringResource(R.string.sos_status_ready)
+                        is SosUiState.Active -> stringResource(R.string.sos_status_alerting)
+                        SosUiState.Cancelled -> stringResource(R.string.sos_status_cancelled)
+                        is SosUiState.Error -> stringResource(R.string.sos_status_error)
                     },
                     color = EmergencyWhite,
                     fontSize = 11.sp,
@@ -444,7 +446,7 @@ fun SosScreen(
                             Spacer(modifier = Modifier.height(4.dp))
 
                             Text(
-                                text = "ACTIVE",
+                                text = stringResource(R.string.active_caps),
                                 color = EmergencyWhite,
                                 style =
                                     MaterialTheme.typography.headlineMedium,
@@ -464,7 +466,7 @@ fun SosScreen(
                             Spacer(modifier = Modifier.height(4.dp))
 
                             Text(
-                                text = "SOS",
+                                text = stringResource(R.string.sos_caps),
                                 color = EmergencyWhite,
                                 style =
                                     MaterialTheme.typography.headlineLarge,
@@ -473,7 +475,7 @@ fun SosScreen(
                             )
 
                             Text(
-                                text = "START 5S TIMER",
+                                text = stringResource(R.string.start_5s_timer),
                                 color =
                                     EmergencyWhite.copy(alpha = 0.85f),
                                 fontSize = 9.sp,
@@ -524,9 +526,9 @@ fun SosScreen(
 
                 Text(
                     text = when (uiState) {
-                        SosUiState.Cancelled -> "Reset SOS"
-                        is SosUiState.Error -> "Dismiss Error"
-                        else -> "Cancel Alert / I Am Safe"
+                        SosUiState.Cancelled -> stringResource(R.string.reset_sos)
+                        is SosUiState.Error -> stringResource(R.string.dismiss_error)
+                        else -> stringResource(R.string.cancel_alert_safe)
                     },
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
@@ -593,9 +595,9 @@ fun SosScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = if (isEmergencyActive) {
-                                "Emergency Broadcast Active"
+                                stringResource(R.string.emergency_broadcast_active)
                             } else {
-                                "Emergency Dispatch Standby"
+                                stringResource(R.string.emergency_dispatch_standby)
                             },
                             style =
                                 MaterialTheme.typography.titleMedium,
@@ -673,7 +675,7 @@ fun SosScreen(
                                 Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "GPS Location Locked",
+                                text = stringResource(R.string.gps_location_locked),
                                 style =
                                     MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
@@ -693,7 +695,7 @@ fun SosScreen(
                                     )
                             ) {
                                 Text(
-                                    text = "HIGH PRECISION",
+                                    text = stringResource(R.string.high_precision),
                                     color = SafeGreen,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold
@@ -704,8 +706,7 @@ fun SosScreen(
                         Spacer(modifier = Modifier.height(2.dp))
 
                         Text(
-                            text =
-                                "37.7749\u00B0 N, 122.4194\u00B0 W \u2022 Accuracy \u00B13.5m",
+                            text = stringResource(R.string.gps_coordinates_accuracy, "37.7749° N, 122.4194° W", "±3.5m"),
                             style =
                                 MaterialTheme.typography.bodySmall,
                             color =
@@ -752,8 +753,8 @@ fun SosScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = batteryPercentage?.let { percentage ->
-                                "Battery Status: $percentage%"
-                            } ?: "Battery Status: Reading...",
+                                stringResource(R.string.battery_status_percent, percentage)
+                            } ?: stringResource(R.string.battery_status_reading),
                             style =
                                 MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
@@ -764,7 +765,7 @@ fun SosScreen(
                         Spacer(modifier = Modifier.height(2.dp))
 
                         Text(
-                            text = "Live reading from this device",
+                            text = stringResource(R.string.live_reading_device),
                             style =
                                 MaterialTheme.typography.bodySmall,
                             color =

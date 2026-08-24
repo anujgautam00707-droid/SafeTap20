@@ -70,13 +70,14 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.safetap.app.di.SafeTapViewModelFactory
 import com.safetap.app.R
+import com.safetap.app.di.SafeTapViewModelFactory
 import com.safetap.app.ui.components.EmergencyPulseButton
 import com.safetap.app.ui.components.QuickActionCard
 import com.safetap.app.ui.theme.EmergencyRed
@@ -194,13 +195,12 @@ fun HomeScreen(
             },
             title = {
                 Text(
-                    text = "Emergency Call",
+                    text = stringResource(R.string.emergency_call),
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
-                Text("Do you want to dial emergency dispatch (112) immediately?")
-                Text("Do you want to call India's emergency response service (112) immediately?")
+                Text(stringResource(R.string.emergency_call_confirm_message))
             },
             confirmButton = {
                 Button(
@@ -224,13 +224,12 @@ fun HomeScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = EmergencyRed)
                 ) {
-                    Text("Call 112", color = EmergencyWhite)
-                    Text("Call Emergency (112)", color = EmergencyWhite)
+                    Text(stringResource(R.string.call_112), color = EmergencyWhite)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEmergencyCallDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -249,11 +248,11 @@ fun HomeScreen(
                 )
             },
             title = {
-                Text("Live Location Sharing", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.live_location_sharing), fontWeight = FontWeight.Bold)
             },
             text = {
                 Column {
-                    Text("Your current location is continuously monitored for rapid SOS dispatch.")
+                    Text(stringResource(R.string.live_location_desc))
                     Spacer(modifier = Modifier.height(8.dp))
                     Surface(
                         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -273,7 +272,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "High Precision GPS Active",
+                                text = stringResource(R.string.high_precision_gps_active),
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -288,12 +287,12 @@ fun HomeScreen(
                         onOpenSos()
                     }
                 ) {
-                    Text("Open SOS Mode")
+                    Text(stringResource(R.string.open_sos_mode))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLiveLocationDialog = false }) {
-                    Text("Close")
+                    Text(stringResource(R.string.close))
                 }
             }
         )
@@ -316,16 +315,16 @@ fun HomeScreen(
             },
             title = {
                 Text(
-                    text = if (fakeCallCountdown) "Incoming Call in 5s..." else "Fake Call Disguise",
+                    text = if (fakeCallCountdown) stringResource(R.string.fake_call_incoming_in) else stringResource(R.string.fake_call_disguise),
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Text(
                     if (fakeCallCountdown)
-                        "Stay calm. Your phone will ring with a simulated emergency escape call shortly."
+                        stringResource(R.string.fake_call_countdown_desc)
                     else
-                        "Trigger a realistic incoming call to help you safely excuse yourself from uncomfortable situations."
+                        stringResource(R.string.fake_call_trigger_desc)
                 )
             },
             confirmButton = {
@@ -335,7 +334,7 @@ fun HomeScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = WarningAmber)
                 ) {
-                    Text(if (fakeCallCountdown) "Ringing..." else "Trigger Fake Call", color = EmergencyWhite)
+                    Text(if (fakeCallCountdown) stringResource(R.string.ringing) else stringResource(R.string.trigger_fake_call), color = EmergencyWhite)
                 }
             },
             dismissButton = {
@@ -343,7 +342,7 @@ fun HomeScreen(
                     showFakeCallModal = false
                     fakeCallCountdown = false
                 }) {
-                    Text("Dismiss")
+                    Text(stringResource(R.string.dismiss))
                 }
             }
         )
@@ -367,13 +366,13 @@ fun HomeScreen(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Hello, ${uiState.userDisplayName} 👋",
+                    text = stringResource(R.string.hello_user, uiState.userDisplayName),
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onBackground
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "You are protected by SafeTap",
+                    text = stringResource(R.string.protected_by_safetap),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -388,7 +387,7 @@ fun HomeScreen(
             ) {
                 Icon(
                     imageVector = Icons.Filled.Security,
-                    contentDescription = "Security Status",
+                    contentDescription = stringResource(R.string.active),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
@@ -404,7 +403,7 @@ fun HomeScreen(
 
         // Main Animated Large SOS Button
         Text(
-            text = "EMERGENCY ASSISTANCE",
+            text = stringResource(R.string.emergency_assistance),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -415,8 +414,8 @@ fun HomeScreen(
 
         EmergencyPulseButton(
             onClick = onOpenSos,
-            title = "SEND SOS",
-            subtitle = "TAP FOR EMERGENCY",
+            title = stringResource(R.string.send_sos),
+            subtitle = stringResource(R.string.tap_for_emergency),
             size = 175.dp
         )
 
@@ -429,13 +428,13 @@ fun HomeScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Quick Actions",
+                text = stringResource(R.string.quick_actions),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                text = "Instant Access",
+                text = stringResource(R.string.instant_access),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -449,25 +448,28 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             QuickActionCard(
-                title = "Emergency Call",
-                subtitle = "Dial 112",
+                title = stringResource(R.string.emergency_call),
+                subtitle = stringResource(R.string.dial_112),
                 icon = Icons.Filled.Call,
                 iconTint = EmergencyRed,
                 iconBackgroundColor = EmergencyRedContainer,
                 onClick = { showEmergencyCallDialog = true },
                 modifier = Modifier.weight(1f),
-                badgeText = "Fast"
+                badgeText = stringResource(R.string.fast)
             )
 
             QuickActionCard(
-                title = "Trusted Contacts",
-                subtitle = "Manage allies",
+                title = stringResource(R.string.trusted_contacts_home),
+                subtitle = stringResource(R.string.manage_allies),
                 icon = Icons.Filled.People,
                 iconTint = Color(0xFF7B1FA2),
                 iconBackgroundColor = Color(0xFFF3E5F5),
                 onClick = onNavigateToContacts,
                 modifier = Modifier.weight(1f),
-                badgeText = "${uiState.contactsCount} Linked"
+                badgeText = stringResource(
+                    R.string.contacts_linked_count,
+                    uiState.contactsCount
+                )
             )
         }
 
@@ -478,19 +480,19 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             QuickActionCard(
-                title = "Live Location",
-                subtitle = "GPS Tracking",
+                title = stringResource(R.string.live_location),
+                subtitle = stringResource(R.string.gps_tracking),
                 icon = Icons.Filled.LocationOn,
                 iconTint = SafeGreen,
                 iconBackgroundColor = SafeGreenContainer,
                 onClick = { showLiveLocationDialog = true },
                 modifier = Modifier.weight(1f),
-                badgeText = "Active"
+                badgeText = stringResource(R.string.active)
             )
 
             QuickActionCard(
-                title = "Fake Call",
-                subtitle = "Safety disguise",
+                title = stringResource(R.string.fake_call),
+                subtitle = stringResource(R.string.safety_disguise),
                 icon = Icons.Filled.PhoneInTalk,
                 iconTint = WarningAmber,
                 iconBackgroundColor = WarningAmberContainer,
@@ -522,7 +524,7 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "Recent Activity",
+                            text = stringResource(R.string.recent_activity),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
@@ -672,7 +674,7 @@ private fun StatusReadyBanner(contactsCount: Int) {
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "SafeTap Ready",
+                        text = stringResource(R.string.safetap_ready),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = SafeGreen
@@ -685,7 +687,7 @@ private fun StatusReadyBanner(contactsCount: Int) {
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "ONLINE",
+                            text = stringResource(R.string.online),
                             color = SafeGreen,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Black
@@ -694,7 +696,7 @@ private fun StatusReadyBanner(contactsCount: Int) {
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "GPS High Accuracy • $contactsCount ${if (contactsCount == 1) "Contact" else "Contacts"} Synced",
+                    text = stringResource(R.string.gps_accuracy_contacts),
                     style = MaterialTheme.typography.bodySmall,
                     color = SafeGreen.copy(alpha = 0.85f)
                 )
@@ -754,20 +756,20 @@ private fun FakeIncomingCallOverlay(
                 }
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "Incoming call",
+                    text = stringResource(R.string.incoming_call),
                     color = EmergencyWhite,
                     style = MaterialTheme.typography.titleLarge
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "SafeTap Support",
+                    text = stringResource(R.string.safetap_support),
                     color = EmergencyWhite,
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = if (isAnswered) "Connected" else "Mobile",
+                    text = if (isAnswered) stringResource(R.string.connected) else stringResource(R.string.mobile),
                     color = Color.LightGray,
                     style = MaterialTheme.typography.bodyLarge
                 )
@@ -779,7 +781,7 @@ private fun FakeIncomingCallOverlay(
                     colors = ButtonDefaults.buttonColors(containerColor = EmergencyRed),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("End fake call")
+                    Text(stringResource(R.string.end_fake_call))
                 }
             } else {
                 Row(
@@ -791,14 +793,14 @@ private fun FakeIncomingCallOverlay(
                         colors = ButtonDefaults.buttonColors(containerColor = EmergencyRed),
                         modifier = Modifier.size(width = 140.dp, height = 56.dp)
                     ) {
-                        Text("Decline")
+                        Text(stringResource(R.string.decline))
                     }
                     Button(
                         onClick = { isAnswered = true },
                         colors = ButtonDefaults.buttonColors(containerColor = SafeGreen),
                         modifier = Modifier.size(width = 140.dp, height = 56.dp)
                     ) {
-                        Text("Answer")
+                        Text(stringResource(R.string.answer))
                     }
                 }
             }

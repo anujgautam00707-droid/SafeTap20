@@ -39,6 +39,10 @@
             </intent-filter>
         </activity>
 
+        <meta-data
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService:autoStoreLocales"
+            android:value="true" />
+
         <service
             android:name=".data.sos.services.LocationTrackingService"
             android:exported="false"

@@ -142,6 +142,7 @@ object AppContainer {
             LocalSosDataSource(appContext)
 
         sosCoordinator = SosCoordinator(
+            context = appContext,
             permissionChecker = permissionChecker,
             locationProvider = locationProvider,
             batteryProvider = batteryProvider,

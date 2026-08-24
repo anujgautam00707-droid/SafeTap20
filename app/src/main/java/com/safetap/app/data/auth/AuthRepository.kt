@@ -7,6 +7,8 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.FirebaseUser
+import com.safetap.app.R
+import com.safetap.app.util.UiText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -50,45 +52,45 @@ class AuthRepository(
             }
         }
 
-    private fun Exception.toUserMessage(): String {
+    private fun Exception.toUserMessage(): UiText {
         val msg = localizedMessage.orEmpty()
         if (msg.contains("API key not valid", ignoreCase = true) || msg.contains("API_KEY_INVALID", ignoreCase = true)) {
-            return "Invalid Firebase API key. Please update google-services.json with your actual Firebase project configuration."
+            return UiText.StringResource(R.string.error_invalid_api_key)
         }
         return when (this) {
             is FirebaseAuthWeakPasswordException ->
-                "Password is too weak. Please use at least 6 characters."
+                UiText.StringResource(R.string.error_weak_password)
             is FirebaseAuthInvalidCredentialsException ->
                 if (errorCode == "ERROR_INVALID_EMAIL") {
-                    "Please enter a valid email address."
+                    UiText.StringResource(R.string.error_invalid_email)
                 } else {
-                    "Incorrect email or password. Please try again."
+                    UiText.StringResource(R.string.error_invalid_credentials)
                 }
             is FirebaseAuthInvalidUserException ->
-                "No account found with this email. Please sign up first."
+                UiText.StringResource(R.string.error_no_account_found)
             is FirebaseAuthUserCollisionException ->
-                "An account with this email already exists."
+                UiText.StringResource(R.string.error_email_already_exists)
             is FirebaseNetworkException ->
-                "Network error. Please check your internet connection and try again."
+                UiText.StringResource(R.string.error_network)
             is FirebaseAuthException -> mapAuthErrorCode(errorCode)
-            else -> localizedMessage?.takeIf { it.isNotBlank() }
-                ?: "An unexpected error occurred. Please try again."
+            else -> localizedMessage?.takeIf { it.isNotBlank() }?.let { UiText.DynamicString(it) }
+                ?: UiText.StringResource(R.string.error_unexpected)
         }
     }
 
 
-    private fun mapAuthErrorCode(code: String?): String = when (code) {
-        "ERROR_INVALID_EMAIL" -> "Please enter a valid email address."
+    private fun mapAuthErrorCode(code: String?): UiText = when (code) {
+        "ERROR_INVALID_EMAIL" -> UiText.StringResource(R.string.error_invalid_email)
         "ERROR_WRONG_PASSWORD", "ERROR_INVALID_CREDENTIAL" ->
-            "Incorrect email or password. Please try again."
-        "ERROR_USER_NOT_FOUND" -> "No account found with this email."
-        "ERROR_USER_DISABLED" -> "This account has been disabled. Contact support."
-        "ERROR_EMAIL_ALREADY_IN_USE" -> "An account with this email already exists."
-        "ERROR_WEAK_PASSWORD" -> "Password is too weak. Please use at least 6 characters."
-        "ERROR_TOO_MANY_REQUESTS" -> "Too many unsuccessful attempts. Please try again later."
+            UiText.StringResource(R.string.error_invalid_credentials)
+        "ERROR_USER_NOT_FOUND" -> UiText.StringResource(R.string.error_no_account_found)
+        "ERROR_USER_DISABLED" -> UiText.StringResource(R.string.error_user_disabled)
+        "ERROR_EMAIL_ALREADY_IN_USE" -> UiText.StringResource(R.string.error_email_already_exists)
+        "ERROR_WEAK_PASSWORD" -> UiText.StringResource(R.string.error_weak_password)
+        "ERROR_TOO_MANY_REQUESTS" -> UiText.StringResource(R.string.error_too_many_requests)
         "ERROR_OPERATION_NOT_ALLOWED" ->
-            "Email/password sign-in is not enabled in Firebase Console."
-        else -> "Authentication failed. Please try again."
+            UiText.StringResource(R.string.error_operation_not_allowed)
+        else -> UiText.StringResource(R.string.error_auth_failed)
     }
 }
 

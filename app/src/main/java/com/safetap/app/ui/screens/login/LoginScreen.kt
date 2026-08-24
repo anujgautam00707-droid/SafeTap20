@@ -35,11 +35,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.safetap.app.R
 import com.safetap.app.di.SafeTapViewModelFactory
 import com.safetap.app.ui.components.EmailTextField
 import com.safetap.app.ui.components.PasswordTextField
@@ -58,11 +60,12 @@ fun LoginScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is AuthEvent.Snackbar -> {
-                    snackbarHostState.showSnackbar(event.message)
+                    snackbarHostState.showSnackbar(event.message.asString(context))
                 }
                 is AuthEvent.NavigateHome -> {
                     onLoginSuccess()
@@ -100,7 +103,7 @@ fun LoginScreen(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Shield,
-                        contentDescription = "SafeTap Icon",
+                        contentDescription = stringResource(R.string.app_name),
                         tint = EmergencyWhite,
                         modifier = Modifier.size(40.dp)
                     )
@@ -109,7 +112,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Text(
-                    text = "Welcome to SafeTap",
+                    text = stringResource(R.string.welcome_to_safetap),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -117,7 +120,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Sign in to keep your emergency circle connected",
+                    text = stringResource(R.string.sign_in_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
@@ -139,7 +142,7 @@ fun LoginScreen(
                 PasswordTextField(
                     value = uiState.password,
                     onValueChange = viewModel::onPasswordChanged,
-                    label = "Password",
+                    label = stringResource(R.string.password_label),
                     isVisible = uiState.isPasswordVisible,
                     onToggleVisibility = viewModel::togglePasswordVisibility,
                     error = uiState.passwordError,
@@ -162,7 +165,7 @@ fun LoginScreen(
                         enabled = !uiState.isLoading
                     ) {
                         Text(
-                            text = "Forgot password?",
+                            text = stringResource(R.string.forgot_password_q),
                             style = MaterialTheme.typography.labelLarge
                         )
                     }
@@ -187,7 +190,7 @@ fun LoginScreen(
                         )
                     } else {
                         Text(
-                            text = "Sign In",
+                            text = stringResource(R.string.sign_in),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -202,7 +205,7 @@ fun LoginScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Don't have an account?",
+                        text = stringResource(R.string.dont_have_account),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -212,7 +215,7 @@ fun LoginScreen(
                         enabled = !uiState.isLoading
                     ) {
                         Text(
-                            text = "Sign Up",
+                            text = stringResource(R.string.sign_up),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold
                         )

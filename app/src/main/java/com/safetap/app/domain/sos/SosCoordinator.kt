@@ -1,5 +1,7 @@
 package com.safetap.app.domain.sos
 
+import android.content.Context
+import com.safetap.app.R
 import com.safetap.app.data.contacts.TrustedContactsRepository
 import com.safetap.app.data.sos.LocalSosDataSource
 import com.safetap.app.data.sos.SosRemoteDataSource
@@ -25,6 +27,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 
 class SosCoordinator(
+    private val context: Context,
     private val permissionChecker: PermissionChecker,
     private val locationProvider: LocationProvider,
     private val batteryProvider: BatteryProvider,
@@ -134,7 +137,7 @@ class SosCoordinator(
             val liveToken = EmergencyData.generateCryptographicToken()
 
             val alertMessage = emergencyMessage
-                ?: "EMERGENCY: A SafeTap user triggered an SOS alert and may need assistance."
+                ?: context.getString(R.string.sms_default_message)
 
             val emergencyData = EmergencyData(
                 sosId = sosId,
@@ -339,7 +342,7 @@ class SosCoordinator(
         val liveLink = emergencyData.getLiveTrackingUrl()
 
         return buildString {
-            appendLine("SafeTap emergency alert")
+            appendLine(context.getString(R.string.sms_alert_header))
             appendLine()
             appendLine(emergencyData.emergencyMessage)
             appendLine("Live Track: $liveLink")
@@ -348,11 +351,11 @@ class SosCoordinator(
                     "https://maps.google.com/?q=" +
                             "${emergencyData.latitude}," +
                             emergencyData.longitude
-                appendLine("Location: $mapsLink")
+                appendLine(context.getString(R.string.sms_location_label, mapsLink))
             } else {
-                appendLine("Location: Unavailable")
+                appendLine(context.getString(R.string.sms_location_unavailable))
             }
-            append("Battery: ${emergencyData.batteryPercentage}%")
+            append(context.getString(R.string.sms_battery_label, emergencyData.batteryPercentage))
         }
     }
 }

@@ -2,6 +2,7 @@ package com.safetap.app.ui.screens.settings
 
 import androidx.lifecycle.ViewModel
 import com.safetap.app.data.auth.AuthRepository
+import com.safetap.app.util.LocaleHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,7 +12,8 @@ data class SettingsUiState(
     val userEmail: String = "",
     val notificationsEnabled: Boolean = true,
     val isSigningOut: Boolean = false,
-    val showSignOutDialog: Boolean = false
+    val showSignOutDialog: Boolean = false,
+    val selectedLanguage: String = "English (US)"
 )
 
 class SettingsViewModel(
@@ -23,7 +25,12 @@ class SettingsViewModel(
 
     init {
         val email = authRepository.currentUser?.email.orEmpty()
-        _uiState.update { it.copy(userEmail = email) }
+        val language = LocaleHelper.getSelectedLanguageName()
+        _uiState.update { it.copy(userEmail = email, selectedLanguage = language) }
+    }
+
+    fun onLanguageSelected(language: String) {
+        _uiState.update { it.copy(selectedLanguage = language) }
     }
 
     fun onShowSignOutDialog(show: Boolean) {
