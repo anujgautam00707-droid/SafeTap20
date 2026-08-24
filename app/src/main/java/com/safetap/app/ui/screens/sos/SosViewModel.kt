@@ -62,8 +62,7 @@ class SosViewModel(
             }
         }
     }
-        }
-    }
+
 
     fun refreshBatteryPercentage() {
         viewModelScope.launch {
@@ -244,7 +243,10 @@ class SosViewModel(
                 // Primary contact call failure is a secondary error and
                 // must not disrupt the active SOS broadcast state.
                 val error = callResult.exceptionOrNull()
-                android.util.Log.e("SosViewModel", "Failed to call primary contact: ${error?.message}")
+                android.util.Log.e(
+                    "SosViewModel",
+                    "Failed to call primary contact: ${error?.message}"
+                )
             }
         }
     }
