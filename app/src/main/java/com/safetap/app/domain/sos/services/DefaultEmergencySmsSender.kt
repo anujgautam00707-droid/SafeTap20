@@ -87,12 +87,16 @@ class DefaultEmergencySmsSender(
                 "Emergency SMS message cannot be empty."
             }
 
-            check(hasSmsPermission()) {
-                "SMS permission has not been granted."
+            if (!hasSmsPermission()) {
+                return Result.failure(
+                    SecurityException("SMS permission has not been granted.")
+                )
             }
 
-            check(supportsSmsMessaging()) {
-                "This device does not support SMS messaging."
+            if (!supportsSmsMessaging()) {
+                return Result.failure(
+                    IllegalStateException("This device does not support SMS messaging.")
+                )
             }
 
             val validRecipients = recipients
