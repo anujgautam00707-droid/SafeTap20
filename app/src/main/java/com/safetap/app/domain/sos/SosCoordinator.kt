@@ -2,6 +2,7 @@ package com.safetap.app.domain.sos
 
 import com.safetap.app.data.contacts.TrustedContactsRepository
 import com.safetap.app.data.sos.SosRemoteDataSource
+import com.safetap.app.data.status.AppStatusRepository
 import com.safetap.app.domain.sos.model.EmergencyData
 import com.safetap.app.domain.sos.model.SosError
 import com.safetap.app.domain.sos.model.SosStatus
@@ -28,6 +29,7 @@ class SosCoordinator(
     private val callManager: EmergencyCallManager,
     private val emergencySmsSender: EmergencySmsSender,
     private val trustedContactsRepository: TrustedContactsRepository,
+    private val appStatusRepository: AppStatusRepository,
     private val remoteDataSource: SosRemoteDataSource,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 ) {
@@ -79,6 +81,10 @@ class SosCoordinator(
                     ?: locationProvider.getLastKnownLocation()
             }.getOrNull()
 
+            if (locationResult != null) {
+                appStatusRepository.updateLocationSynchronized()
+            }
+
             val latitude = locationResult?.latitude ?: 0.0
             val longitude = locationResult?.longitude ?: 0.0
             val locationAccuracy = locationResult?.accuracy ?: 0.0f
@@ -121,6 +127,8 @@ class SosCoordinator(
             }
 
             currentActiveSosId = sosId
+
+            appStatusRepository.updateSafeTapProtected()
 
             notificationManager.showActiveSosNotification(
                 emergencyData

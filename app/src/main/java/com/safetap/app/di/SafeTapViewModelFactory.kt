@@ -26,7 +26,11 @@ object SafeTapViewModelFactory : ViewModelProvider.Factory {
                 SettingsViewModel(authRepository) as T
 
             modelClass.isAssignableFrom(HomeViewModel::class.java) ->
-                HomeViewModel(authRepository) as T
+                HomeViewModel(
+                    authRepository,
+                    AppContainer.trustedContactsRepository,
+                    AppContainer.appStatusRepository
+                ) as T
 
             modelClass.isAssignableFrom(TrustedContactsViewModel::class.java) ->
                 TrustedContactsViewModel(
