@@ -42,7 +42,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -56,6 +55,11 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -78,6 +82,7 @@ fun SosScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val batteryPercentage by
     viewModel.batteryPercentage.collectAsStateWithLifecycle()
+    val contactsCount by viewModel.contactsCount.collectAsStateWithLifecycle()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -195,7 +200,7 @@ fun SosScreen(
                 Text(
                     text = when (val state = uiState) {
                         SosUiState.Idle ->
-                            "Tap button to start 5-second countdown"
+                            "One tap away from help"
 
                         SosUiState.CheckingPermissions ->
                             "Checking emergency permissions"
@@ -381,13 +386,28 @@ fun SosScreen(
                                 SosUiState.Idle ->
                                     viewModel.startSos()
 
-                                is SosUiState.Countdown ->
-                                    viewModel.triggerImmediately()
+                                is SosUiState.Countdown,
+                                SosUiState.CheckingPermissions ->
+                                    viewModel.cancelSos()
 
                                 else -> Unit
                             }
                         }
                     )
+                    .clearAndSetSemantics {
+                        val desc = when (val state = uiState) {
+                            SosUiState.Idle -> "Trigger SOS"
+                            is SosUiState.Countdown -> "Cancel SOS, ${state.secondsRemaining} seconds remaining"
+                            SosUiState.CollectingEmergencyData,
+                            is SosUiState.ReadyToSend,
+                            is SosUiState.Active -> "SOS is being sent"
+                            else -> ""
+                        }
+                        if (desc.isNotEmpty()) {
+                            contentDescription = desc
+                        }
+                        role = Role.Button
+                    }
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -403,7 +423,7 @@ fun SosScreen(
                             )
 
                             Text(
-                                text = "TAP TO TRIGGER NOW",
+                                text = "CANCEL SOS",
                                 color =
                                     EmergencyWhite.copy(alpha = 0.9f),
                                 fontSize = 9.sp,
@@ -468,7 +488,7 @@ fun SosScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        if (uiState != SosUiState.Idle) {
+        if (uiState != SosUiState.Idle && !usesCountdownVisuals) {
             Button(
                 onClick = {
                     when (uiState) {
@@ -510,19 +530,6 @@ fun SosScreen(
                     },
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
-                )
-            }
-        } else {
-            OutlinedButton(
-                onClick = viewModel::startSos,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text(
-                    text = "Test 5-Second SOS Countdown",
-                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -602,12 +609,22 @@ fun SosScreen(
 
                         Spacer(modifier = Modifier.height(2.dp))
 
+                        val contactsDescription = if (isEmergencyActive) {
+                            when (contactsCount) {
+                                0 -> "No trusted contacts configured for alert"
+                                1 -> "Alerting 1 trusted contact with live audio & location"
+                                else -> "Alerting $contactsCount trusted contacts with live audio & location"
+                            }
+                        } else {
+                            when (contactsCount) {
+                                0 -> "No trusted contacts will be alerted until you add one."
+                                1 -> "1 contact will be alerted immediately on trigger"
+                                else -> "$contactsCount contacts will be alerted immediately on trigger"
+                            }
+                        }
+
                         Text(
-                            text = if (isEmergencyActive) {
-                                "Alerting 3 trusted contacts with live audio & location"
-                            } else {
-                                "3 contacts will be alerted immediately on trigger"
-                            },
+                            text = contactsDescription,
                             style =
                                 MaterialTheme.typography.bodySmall,
                             color =
@@ -688,7 +705,7 @@ fun SosScreen(
 
                         Text(
                             text =
-                                "37.7749° N, 122.4194° W • Accuracy ±3.5m",
+                                "37.7749\u00B0 N, 122.4194\u00B0 W \u2022 Accuracy \u00B13.5m",
                             style =
                                 MaterialTheme.typography.bodySmall,
                             color =
