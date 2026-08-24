@@ -35,9 +35,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.safetap.app.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.safetap.app.di.SafeTapViewModelFactory
@@ -109,7 +111,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 Text(
-                    text = "Welcome to SafeTap",
+                    text = stringResource(R.string.auth_welcome_title),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -117,7 +119,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Sign in to keep your emergency circle connected",
+                    text = stringResource(R.string.auth_welcome_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
@@ -139,7 +141,7 @@ fun LoginScreen(
                 PasswordTextField(
                     value = uiState.password,
                     onValueChange = viewModel::onPasswordChanged,
-                    label = "Password",
+                    label = stringResource(R.string.auth_password_label),
                     isVisible = uiState.isPasswordVisible,
                     onToggleVisibility = viewModel::togglePasswordVisibility,
                     error = uiState.passwordError,
@@ -162,7 +164,7 @@ fun LoginScreen(
                         enabled = !uiState.isLoading
                     ) {
                         Text(
-                            text = "Forgot password?",
+                            text = stringResource(R.string.auth_forgot_password),
                             style = MaterialTheme.typography.labelLarge
                         )
                     }
@@ -187,7 +189,7 @@ fun LoginScreen(
                         )
                     } else {
                         Text(
-                            text = "Sign In",
+                            text = stringResource(R.string.auth_signin_btn),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -202,7 +204,7 @@ fun LoginScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Don't have an account?",
+                        text = stringResource(R.string.auth_no_account),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -212,7 +214,7 @@ fun LoginScreen(
                         enabled = !uiState.isLoading
                     ) {
                         Text(
-                            text = "Sign Up",
+                            text = stringResource(R.string.auth_signup_link),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold
                         )

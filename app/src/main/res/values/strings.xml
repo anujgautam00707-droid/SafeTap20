@@ -148,7 +148,29 @@
     <string name="privacy_bullet_2">• No Background Tracking: Location sharing only activates during manual SOS triggers or safety countdowns.</string>
     <string name="privacy_bullet_3">• Strict Contact Access: Only people you designate as Trusted Contacts receive your alert broadcasts.</string>
 
-    <!-- Common Actions & Dialogs -->
+    <!-- Auth Screens (Login / SignUp / ForgotPassword) -->
+    <string name="auth_welcome_title">Welcome to SafeTap</string>
+    <string name="auth_welcome_subtitle">Sign in to keep your emergency circle connected</string>
+    <string name="auth_signin_btn">Sign In</string>
+    <string name="auth_forgot_password">Forgot password?</string>
+    <string name="auth_no_account">Don\'t have an account?</string>
+    <string name="auth_signup_link">Sign Up</string>
+    <string name="auth_signup_title">Create Account</string>
+    <string name="auth_signup_subtitle">Join SafeTap to protect yourself and loved ones</string>
+    <string name="auth_password_label">Password</string>
+    <string name="auth_password_signup_label">Password (min 6 characters)</string>
+    <string name="auth_confirm_password_label">Confirm Password</string>
+    <string name="auth_create_account_btn">Create Account</string>
+    <string name="auth_have_account">Already have an account?</string>
+    <string name="auth_forgot_title">Forgot Password?</string>
+    <string name="auth_forgot_subtitle">Enter your registered email address and we\'ll send you a password reset link.</string>
+    <string name="auth_send_reset_link">Send Reset Link</string>
+    <string name="auth_back_to_signin">Back to Sign In</string>
+
+    <!-- Splash Screen -->
+    <string name="splash_tagline">Help within reach</string>
+
+    <!-- Common Actions &amp; Dialogs -->
     <string name="sign_out">Sign Out</string>
     <string name="sign_out_dialog_title">Sign Out</string>
     <string name="sign_out_dialog_message">Are you sure you want to sign out of SafeTap? You will need to log in again to use live emergency broadcasts.</string>

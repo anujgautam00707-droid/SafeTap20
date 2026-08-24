@@ -148,7 +148,29 @@
     <string name="privacy_bullet_2">• Kein Hintergrund-Tracking: Die Standortfreigabe wird nur bei manuellen SOS-Auslösern oder Countdowns aktiviert.</string>
     <string name="privacy_bullet_3">• Strenger Kontaktzugriff: Nur Personen, die Sie als vertrauenswürdige Kontakte festlegen, erhalten Alarmübertragungen.</string>
 
-    <!-- Common Actions & Dialogs -->
+    <!-- Auth Screens (Login / SignUp / ForgotPassword) -->
+    <string name="auth_welcome_title">Willkommen bei SafeTap</string>
+    <string name="auth_welcome_subtitle">Melden Sie sich an, um Ihren Notfallkreis verbunden zu halten</string>
+    <string name="auth_signin_btn">Anmelden</string>
+    <string name="auth_forgot_password">Passwort vergessen?</string>
+    <string name="auth_no_account">Noch kein Konto?</string>
+    <string name="auth_signup_link">Registrieren</string>
+    <string name="auth_signup_title">Konto erstellen</string>
+    <string name="auth_signup_subtitle">Treten Sie SafeTap bei, um sich und Ihre Lieben zu schützen</string>
+    <string name="auth_password_label">Passwort</string>
+    <string name="auth_password_signup_label">Passwort (mind. 6 Zeichen)</string>
+    <string name="auth_confirm_password_label">Passwort bestätigen</string>
+    <string name="auth_create_account_btn">Konto erstellen</string>
+    <string name="auth_have_account">Bereits ein Konto?</string>
+    <string name="auth_forgot_title">Passwort vergessen?</string>
+    <string name="auth_forgot_subtitle">Geben Sie Ihre registrierte E-Mail-Adresse ein und wir senden Ihnen einen Link zum Zurücksetzen des Passworts.</string>
+    <string name="auth_send_reset_link">Zurücksetzen-Link senden</string>
+    <string name="auth_back_to_signin">Zurück zur Anmeldung</string>
+
+    <!-- Splash Screen -->
+    <string name="splash_tagline">Hilfe zum Greifen nah</string>
+
+    <!-- Common Actions &amp; Dialogs -->
     <string name="sign_out">Abmelden</string>
     <string name="sign_out_dialog_title">Abmelden</string>
     <string name="sign_out_dialog_message">Möchten Sie sich wirklich von SafeTap abmelden? Sie müssen sich erneut anmelden, um Live-Notfallübertragungen zu nutzen.</string>

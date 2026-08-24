@@ -148,7 +148,29 @@
     <string name="privacy_bullet_2">• Sin rastreo en segundo plano: La ubicación solo se comparte durante la activación manual de SOS o cuentas regresivas.</string>
     <string name="privacy_bullet_3">• Acceso estricto a contactos: Solo los Contactos de Confianza reciben las alertas de emergencia.</string>
 
-    <!-- Common Actions & Dialogs -->
+    <!-- Auth Screens (Login / SignUp / ForgotPassword) -->
+    <string name="auth_welcome_title">Bienvenido a SafeTap</string>
+    <string name="auth_welcome_subtitle">Inicia sesión para mantener conectado tu círculo de emergencia</string>
+    <string name="auth_signin_btn">Iniciar Sesión</string>
+    <string name="auth_forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="auth_no_account">¿No tienes una cuenta?</string>
+    <string name="auth_signup_link">Registrarse</string>
+    <string name="auth_signup_title">Crear Cuenta</string>
+    <string name="auth_signup_subtitle">Únete a SafeTap para protegerte a ti y a tus seres queridos</string>
+    <string name="auth_password_label">Contraseña</string>
+    <string name="auth_password_signup_label">Contraseña (mín. 6 caracteres)</string>
+    <string name="auth_confirm_password_label">Confirmar Contraseña</string>
+    <string name="auth_create_account_btn">Crear Cuenta</string>
+    <string name="auth_have_account">¿Ya tienes una cuenta?</string>
+    <string name="auth_forgot_title">¿Olvidaste tu Contraseña?</string>
+    <string name="auth_forgot_subtitle">Ingresa tu correo registrado y te enviaremos un enlace para restablecer tu contraseña.</string>
+    <string name="auth_send_reset_link">Enviar Enlace de Restablecimiento</string>
+    <string name="auth_back_to_signin">Volver a Iniciar Sesión</string>
+
+    <!-- Splash Screen -->
+    <string name="splash_tagline">Ayuda al alcance de tu mano</string>
+
+    <!-- Common Actions &amp; Dialogs -->
     <string name="sign_out">Cerrar Sesión</string>
     <string name="sign_out_dialog_title">Cerrar Sesión</string>
     <string name="sign_out_dialog_message">¿Estás seguro de que deseas cerrar sesión en SafeTap? Deberás iniciar sesión nuevamente para usar las transmisiones de emergencia en vivo.</string>

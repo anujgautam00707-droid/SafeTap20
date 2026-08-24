@@ -148,7 +148,29 @@
     <string name="privacy_bullet_2">• Pas de suivi en arrière-plan : Le partage de position ne s\'active que lors du déclenchement SOS ou compte à rebours.</string>
     <string name="privacy_bullet_3">• Accès restreint aux contacts : Seuls les Contacts de Confiance reçoivent vos alertes.</string>
 
-    <!-- Common Actions & Dialogs -->
+    <!-- Auth Screens (Login / SignUp / ForgotPassword) -->
+    <string name="auth_welcome_title">Bienvenue sur SafeTap</string>
+    <string name="auth_welcome_subtitle">Connectez-vous pour rester en lien avec votre cercle d\'urgence</string>
+    <string name="auth_signin_btn">Se Connecter</string>
+    <string name="auth_forgot_password">Mot de passe oublié ?</string>
+    <string name="auth_no_account">Pas encore de compte ?</string>
+    <string name="auth_signup_link">S\'inscrire</string>
+    <string name="auth_signup_title">Créer un Compte</string>
+    <string name="auth_signup_subtitle">Rejoignez SafeTap pour vous protéger, vous et vos proches</string>
+    <string name="auth_password_label">Mot de passe</string>
+    <string name="auth_password_signup_label">Mot de passe (min. 6 caractères)</string>
+    <string name="auth_confirm_password_label">Confirmer le mot de passe</string>
+    <string name="auth_create_account_btn">Créer un Compte</string>
+    <string name="auth_have_account">Vous avez déjà un compte ?</string>
+    <string name="auth_forgot_title">Mot de passe oublié ?</string>
+    <string name="auth_forgot_subtitle">Entrez votre adresse e-mail enregistrée et nous vous enverrons un lien de réinitialisation.</string>
+    <string name="auth_send_reset_link">Envoyer le lien de réinitialisation</string>
+    <string name="auth_back_to_signin">Retour à la connexion</string>
+
+    <!-- Splash Screen -->
+    <string name="splash_tagline">L\'aide à portée de main</string>
+
+    <!-- Common Actions &amp; Dialogs -->
     <string name="sign_out">Déconnexion</string>
     <string name="sign_out_dialog_title">Déconnexion</string>
     <string name="sign_out_dialog_message">Êtes-vous sûr de vouloir vous déconnecter de SafeTap ? Vous devrez vous reconnecter pour utiliser les alertes en direct.</string>
