@@ -8,20 +8,31 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.os.CancellationSignal
+import com.safetap.app.data.status.AppStatusRepository
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import com.safetap.app.domain.sos.model.LocationResult
 import com.safetap.app.domain.sos.services.LocationProvider
 import com.safetap.app.domain.sos.services.PermissionChecker
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.Executors
 import kotlin.coroutines.resume
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 class DefaultLocationProvider(
     private val context: Context,
-    private val permissionChecker: PermissionChecker
+    private val permissionChecker: PermissionChecker,
+    private val appStatusRepository: AppStatusRepository
 ) : LocationProvider {
+
+    private val fusedLocationClient: FusedLocationProviderClient by lazy {
+        LocationServices.getFusedLocationProviderClient(context)
+    }
 
     private val locationManager by lazy {
         context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
@@ -36,9 +47,25 @@ class DefaultLocationProvider(
     @SuppressLint("MissingPermission")
     override suspend fun getCurrentLocation(): LocationResult? = withContext(Dispatchers.IO) {
         if (!permissionChecker.hasLocationPermission()) return@withContext null
-        val lm = locationManager ?: return@withContext null
 
-        withTimeoutOrNull(5000L) {
+        // 1. Try Google Play Services Fused Location Client (Priority High Accuracy)
+        val fusedLoc = runCatching {
+            val cts = CancellationTokenSource()
+            withTimeoutOrNull(3000L) {
+                fusedLocationClient.getCurrentLocation(
+                    Priority.PRIORITY_HIGH_ACCURACY,
+                    cts.token
+                ).await()
+            }
+        }.getOrNull()
+
+        if (fusedLoc != null) {
+            return@withContext fusedLoc.toLocationResult(isLastKnown = false)
+        }
+
+        // 2. Fallback to LocationManager if Fused Client was unavailable or timed out
+        val lm = locationManager ?: return@withContext null
+        withTimeoutOrNull(2000L) {
             suspendCancellableCoroutine { continuation ->
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     val cancellationSignal = CancellationSignal()
@@ -59,7 +86,9 @@ class DefaultLocationProvider(
                             Executors.newSingleThreadExecutor()
                         ) { location: Location? ->
                             if (continuation.isActive) {
+                                continuation.resume(location?.toLocationResult(isLastKnown = false))
                                 if (location != null) {
+                                    appStatusRepository.updateLocationSynchronized()
                                     continuation.resume(location.toLocationResult(isLastKnown = false))
                                 } else {
                                     continuation.resume(null)
@@ -76,6 +105,7 @@ class DefaultLocationProvider(
                         override fun onLocationChanged(location: Location) {
                             lm.removeUpdates(this)
                             if (continuation.isActive) {
+                                appStatusRepository.updateLocationSynchronized()
                                 continuation.resume(location.toLocationResult(isLastKnown = false))
                             }
                         }
@@ -112,6 +142,17 @@ class DefaultLocationProvider(
     @SuppressLint("MissingPermission")
     override suspend fun getLastKnownLocation(): LocationResult? = withContext(Dispatchers.IO) {
         if (!permissionChecker.hasLocationPermission()) return@withContext null
+
+        // 1. Try FusedLocationProviderClient first
+        val fusedLast = runCatching {
+            fusedLocationClient.lastLocation.await()
+        }.getOrNull()
+
+        if (fusedLast != null) {
+            return@withContext fusedLast.toLocationResult(isLastKnown = true)
+        }
+
+        // 2. Fallback to LocationManager
         val lm = locationManager ?: return@withContext null
 
         val gpsLoc = try {

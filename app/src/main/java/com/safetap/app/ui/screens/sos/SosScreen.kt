@@ -42,7 +42,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -57,6 +56,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -80,6 +84,7 @@ fun SosScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val batteryPercentage by
     viewModel.batteryPercentage.collectAsStateWithLifecycle()
+    val contactsCount by viewModel.contactsCount.collectAsStateWithLifecycle()
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -383,13 +388,28 @@ fun SosScreen(
                                 SosUiState.Idle ->
                                     viewModel.startSos()
 
-                                is SosUiState.Countdown ->
-                                    viewModel.triggerImmediately()
+                                is SosUiState.Countdown,
+                                SosUiState.CheckingPermissions ->
+                                    viewModel.cancelSos()
 
                                 else -> Unit
                             }
                         }
                     )
+                    .clearAndSetSemantics {
+                        val desc = when (val state = uiState) {
+                            SosUiState.Idle -> "Trigger SOS"
+                            is SosUiState.Countdown -> "Cancel SOS, ${state.secondsRemaining} seconds remaining"
+                            SosUiState.CollectingEmergencyData,
+                            is SosUiState.ReadyToSend,
+                            is SosUiState.Active -> "SOS is being sent"
+                            else -> ""
+                        }
+                        if (desc.isNotEmpty()) {
+                            contentDescription = desc
+                        }
+                        role = Role.Button
+                    }
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -405,7 +425,7 @@ fun SosScreen(
                             )
 
                             Text(
-                                text = stringResource(R.string.tap_to_trigger_now),
+                                text = "CANCEL SOS",
                                 color =
                                     EmergencyWhite.copy(alpha = 0.9f),
                                 fontSize = 9.sp,
@@ -470,7 +490,7 @@ fun SosScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        if (uiState != SosUiState.Idle) {
+        if (uiState != SosUiState.Idle && !usesCountdownVisuals) {
             Button(
                 onClick = {
                     when (uiState) {
@@ -512,19 +532,6 @@ fun SosScreen(
                     },
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
-                )
-            }
-        } else {
-            OutlinedButton(
-                onClick = viewModel::startSos,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.test_5s_countdown),
-                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -604,12 +611,22 @@ fun SosScreen(
 
                         Spacer(modifier = Modifier.height(2.dp))
 
+                        val contactsDescription = if (isEmergencyActive) {
+                            when (contactsCount) {
+                                0 -> "No trusted contacts configured for alert"
+                                1 -> "Alerting 1 trusted contact with live audio & location"
+                                else -> "Alerting $contactsCount trusted contacts with live audio & location"
+                            }
+                        } else {
+                            when (contactsCount) {
+                                0 -> "No trusted contacts will be alerted until you add one."
+                                1 -> "1 contact will be alerted immediately on trigger"
+                                else -> "$contactsCount contacts will be alerted immediately on trigger"
+                            }
+                        }
+
                         Text(
-                            text = if (isEmergencyActive) {
-                                stringResource(R.string.alerting_contacts_desc)
-                            } else {
-                                stringResource(R.string.contacts_will_be_alerted_desc)
-                            },
+                            text = contactsDescription,
                             style =
                                 MaterialTheme.typography.bodySmall,
                             color =

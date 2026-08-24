@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SafeTap - Emergency Live Tracking</title>
+
+  <!-- Leaflet CSS & JS for Interactive Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #0D0F12;
+      --card-bg: #161A22;
+      --card-border: #262C36;
+      --emergency-red: #E53935;
+      --emergency-red-glow: rgba(229, 57, 53, 0.4);
+      --safe-green: #2E7D32;
+      --text-main: #FFFFFF;
+      --text-muted: #8E9AA8;
+      --accent-blue: #0284C7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--card-border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 1000;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-shield {
+      width: 32px;
+      height: 32px;
+      background: var(--emergency-red);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 16px;
+      box-shadow: 0 0 12px var(--emergency-red-glow);
+    }
+
+    .brand h1 {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .status-badge.live {
+      background: rgba(229, 57, 53, 0.15);
+      border: 1px solid var(--emergency-red);
+      color: #FF5252;
+    }
+
+    .status-badge.live::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: #FF5252;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #FF5252;
+      animation: pulse 1.5s infinite;
+    }
+
+    .status-badge.ended {
+      background: rgba(46, 125, 50, 0.15);
+      border: 1px solid var(--safe-green);
+      color: #4CAF50;
+    }
+
+    .status-badge.standby {
+      background: rgba(142, 154, 168, 0.15);
+      border: 1px solid var(--text-muted);
+      color: var(--text-muted);
+    }
+
+    #map {
+      flex: 1;
+      width: 100%;
+      background: #1a1d24;
+      z-index: 1;
+    }
+
+    .info-sheet {
+      background: var(--card-bg);
+      border-top: 1px solid var(--card-border);
+      padding: 18px 20px;
+      z-index: 1000;
+      box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .alert-banner {
+      background: rgba(229, 57, 53, 0.1);
+      border-left: 4px solid var(--emergency-red);
+      padding: 10px 14px;
+      border-radius: 6px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      line-height: 1.4;
+      color: #FFCDD2;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: #1E232D;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .btn-maps {
+      background: var(--accent-blue);
+      color: #fff;
+    }
+
+    .btn-maps.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+      background: #262C36;
+      color: var(--text-muted);
+      box-shadow: none;
+    }
+
+    .btn-call {
+      background: var(--emergency-red);
+      color: #fff;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.9);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.3);
+        opacity: 0.6;
+      }
+
+      100% {
+        transform: scale(0.9);
+        opacity: 1;
+      }
+    }
+
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 4px solid rgba(229, 57, 53, 0.2);
+      border-top-color: var(--emergency-red);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="loading" class="loading-overlay">
+    <div class="spinner"></div>
+    <p style="font-weight: 600; color: var(--text-muted);">Connecting to SafeTap Secure Emergency Stream...</p>
+  </div>
+
+  <header>
+    <div class="brand">
+      <div class="brand-shield">!</div>
+      <div>
+        <h1>SafeTap</h1>
+        <p id="subTitle" style="font-size: 11px; color: var(--text-muted);">Emergency Live Tracking</p>
+      </div>
+    </div>
+    <div id="statusBadge" class="status-badge standby" style="display: none;">CONNECTING</div>
+  </header>
+
+  <div id="map"></div>
+
+  <div class="info-sheet">
+    <div id="alertBanner" class="alert-banner">
+      🚨 <strong>EMERGENCY SOS:</strong> Connecting to live tracking stream...
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Coordinates</div>
+        <div id="coords" class="stat-value">Locating...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Accuracy</div>
+        <div id="accuracy" class="stat-value">--</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Last Updated</div>
+        <div id="lastUpdated" class="stat-value">Connecting...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Battery</div>
+        <div id="battery" class="stat-value">--%</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a id="mapsButton" href="javascript:void(0)" class="btn btn-maps disabled">📍 Waiting for live location...</a>
+      <a href="tel:112" class="btn btn-call">📞 Call Emergency (112)</a>
+    </div>
+  </div>
+
+  <script>
+    // 1. Regional Firebase Realtime Database Configuration
+    const RTDB_BASE_URL = "https://safetap-2fb1e-default-rtdb.asia-southeast1.firebasedatabase.app";
+
+    // 2. Extract sosId & token from window.location
+    const urlParams = new URLSearchParams(window.location.search);
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+
+    // Supports /live/{sosId}?token={token} or ?sosId={sosId}&token={token}
+    const sosId = urlParams.get('sosId') || (pathParts[0] === 'live' ? pathParts[1] : null) || 'Live SOS';
+    const token = urlParams.get('token');
+
+    if (sosId && sosId !== 'Live SOS') {
+      const shortId = sosId.length > 8 ? sosId.substring(0, 8) + '...' : sosId;
+      document.getElementById('subTitle').innerText = 'SOS Session: ' + shortId;
+    }
+
+    const isHostingDomain = window.location.hostname.endsWith('web.app') ||
+      window.location.hostname.endsWith('firebaseapp.com');
+
+    const API_BASE = isHostingDomain
+      ? '/api'
+      : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://127.0.0.1:5001/safetap-2fb1e/us-central1'
+        : 'https://us-central1-safetap-2fb1e.cloudfunctions.net';
+
+    // Safe Diagnostic Log (without full token or private data)
+    console.log("[SafeTap Diagnostic Init]", {
+      sosId: sosId,
+      tokenPrefix: token ? token.substring(0, 8) + '...' : 'none',
+      tokenLength: token ? token.length : 0,
+      rtdbUrl: RTDB_BASE_URL,
+      apiBase: API_BASE,
+      timestamp: new Date().toISOString()
+    });
+
+    if (!token || !/^[a-f0-9]{64}$/i.test(token.trim())) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('alertBanner').innerHTML = '🔒 <strong>Access Denied:</strong> A valid 256-bit emergency access token is required to view this session.';
+      document.getElementById('statusBadge').style.display = 'none';
+    } else {
+      // Initialize Map (Default India view before first fix)
+      let map = L.map('map', { zoomControl: false }).setView([28.6139, 77.2090], 15);
+      L.control.zoom({ position: 'topright' }).addTo(map);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+
+      // Custom Pulse Marker Icon
+      const pulseIcon = L.divIcon({
+        className: 'custom-pulse-icon',
+        html: `
+          <div style="position: relative; width: 24px; height: 24px;">
+            <div style="position: absolute; width: 24px; height: 24px; background: rgba(229, 57, 53, 0.4); border-radius: 50%; animation: pulse 1.5s infinite;"></div>
+            <div style="position: absolute; top: 4px; left: 4px; width: 16px; height: 16px; background: #E53935; border: 2px solid #FFFFFF; border-radius: 50%; box-shadow: 0 0 6px rgba(0,0,0,0.5);"></div>
+          </div>
+        `,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+
+      let marker = null;
+      let accuracyCircle = null;
+      let lastUpdateTimestamp = Date.now();
+      let pollInterval = null;
+      let eventSource = null;
+
+      function updateRelativeTime() {
+        const seconds = Math.max(0, Math.floor((Date.now() - lastUpdateTimestamp) / 1000));
+        if (seconds < 5) {
+          document.getElementById('lastUpdated').innerText = 'Just now';
+        } else if (seconds < 60) {
+          document.getElementById('lastUpdated').innerText = `${seconds}s ago`;
+        } else {
+          document.getElementById('lastUpdated').innerText = `${Math.floor(seconds / 60)}m ago`;
+        }
+      }
+      setInterval(updateRelativeTime, 1000);
+
+      function handleDataUpdate(data) {
+        document.getElementById('loading').style.display = 'none';
+
+        const lat = data.latitude;
+        const lng = data.longitude;
+        const accuracy = data.accuracy || 0;
+        const battery = data.battery != null ? data.battery : '--';
+        const status = data.status || "ACTIVE";
+        const isEnded = status === "ENDED" || status === "CANCELLED" || status === "RESOLVED";
+
+        lastUpdateTimestamp = data.timestamp || Date.now();
+        updateRelativeTime();
+
+        document.getElementById('battery').innerText = (battery !== '--' ? battery + '%' : '--');
+        document.getElementById('accuracy').innerText = accuracy > 0 ? `±${Math.round(accuracy)}m` : '--';
+
+        const statusBadge = document.getElementById('statusBadge');
+        const alertBanner = document.getElementById('alertBanner');
+        const mapsButton = document.getElementById('mapsButton');
+
+        if (isEnded) {
+          statusBadge.style.display = 'inline-flex';
+          statusBadge.className = 'status-badge ended';
+          statusBadge.innerText = 'SOS ENDED / SAFE';
+          alertBanner.style.borderColor = 'var(--safe-green)';
+          alertBanner.style.background = 'rgba(46, 125, 50, 0.1)';
+          alertBanner.style.color = '#C8E6C9';
+          alertBanner.innerHTML = '✅ <strong>SOS ENDED / SAFE:</strong> The user has marked themselves safe or ended this emergency broadcast.';
+
+          // Stop realtime polling/SSE
+          if (pollInterval) clearInterval(pollInterval);
+          if (eventSource) eventSource.close();
+          return;
+        } else {
+          statusBadge.style.display = 'inline-flex';
+          statusBadge.className = 'status-badge live';
+          statusBadge.innerText = 'LIVE';
+          alertBanner.style.borderColor = 'var(--emergency-red)';
+          alertBanner.style.background = 'rgba(229, 57, 53, 0.1)';
+          alertBanner.style.color = '#FFCDD2';
+          alertBanner.innerHTML = '🚨 <strong>EMERGENCY SOS ACTIVE:</strong> Authorized live GPS tracking in progress.';
+        }
+
+        if (lat != null && lng != null && (lat !== 0.0 || lng !== 0.0)) {
+          const latLng = [lat, lng];
+          document.getElementById('coords').innerText = `${lat.toFixed(5)}°, ${lng.toFixed(5)}°`;
+
+          if (!marker) {
+            marker = L.marker(latLng, { icon: pulseIcon }).addTo(map);
+            accuracyCircle = L.circle(latLng, {
+              radius: accuracy > 0 ? accuracy : 10,
+              color: '#E53935',
+              fillColor: '#E53935',
+              fillOpacity: 0.15,
+              weight: 1
+            }).addTo(map);
+            map.setView(latLng, 16);
+          } else {
+            marker.setLatLng(latLng);
+            accuracyCircle.setLatLng(latLng);
+            if (accuracy > 0) accuracyCircle.setRadius(accuracy);
+            map.panTo(latLng);
+          }
+
+          mapsButton.classList.remove('disabled');
+          mapsButton.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+          mapsButton.innerText = "📍 Open in Google Maps";
+        } else {
+          document.getElementById('coords').innerText = "Locating...";
+          mapsButton.classList.add('disabled');
+          mapsButton.href = "javascript:void(0)";
+          mapsButton.innerText = "📍 Waiting for live location...";
+        }
+      }
+
+      function buildQueryUrl(endpoint) {
+        const params = new URLSearchParams();
+        params.set('token', token.trim());
+        if (sosId && sosId !== 'Live SOS') {
+          params.set('sosId', sosId.trim());
+        }
+        return `${endpoint}?${params.toString()}`;
+      }
+
+      // Connect via Server-Sent Events (SSE) stream or fallback to HTTP polling
+      function startLiveStream() {
+        try {
+          const endpoint = API_BASE === '/api' ? '/api/liveStream' : `${API_BASE}/liveStream`;
+          const streamUrl = buildQueryUrl(endpoint);
+          eventSource = new EventSource(streamUrl);
+
+          eventSource.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              if (data && data.status) {
+                console.log("[SafeTap Diagnostic LiveStream Event]", { status: data.status, lat: data.latitude, lng: data.longitude });
+                handleDataUpdate(data);
+              }
+            } catch (err) {
+              console.warn("SSE parse error:", err);
+            }
+          };
+
+          eventSource.onerror = () => {
+            if (eventSource) eventSource.close();
+            // Fallback to direct polling
+            startPollingFallback();
+          };
+        } catch (e) {
+          startPollingFallback();
+        }
+      }
+
+      async function fetchLocationOnce() {
+        const sanitizedToken = token.trim().toLowerCase();
+        
+        // 1. Direct Regional RTDB Lookup (asia-southeast1)
+        try {
+          const rtdbPath = `${RTDB_BASE_URL}/live_locations/${sanitizedToken}.json`;
+          const dbRes = await fetch(rtdbPath);
+          
+          console.log("[SafeTap Diagnostic RTDB Poll]", {
+            sosId: sosId,
+            tokenPrefix: sanitizedToken.substring(0, 8) + '...',
+            rtdbUrl: RTDB_BASE_URL,
+            requestedPath: `/live_locations/${sanitizedToken.substring(0, 8)}...json`,
+            httpStatus: dbRes.status
+          });
+
+          if (dbRes.ok) {
+            const data = await dbRes.json();
+            if (data && typeof data === 'object' && (data.status || data.latitude)) {
+              console.log("[SafeTap Diagnostic RTDB Success]", {
+                parsedStatus: data.status,
+                latitude: data.latitude,
+                longitude: data.longitude,
+                battery: data.battery
+              });
+              handleDataUpdate(data);
+              return;
+            }
+          }
+        } catch (dbErr) {
+          console.warn("Direct RTDB lookup error:", dbErr);
+        }
+
+        // 2. Cloud Function API Lookup
+        try {
+          const endpoint = API_BASE === '/api' ? '/api/getLiveLocation' : `${API_BASE}/getLiveLocation`;
+          const fetchUrl = buildQueryUrl(endpoint);
+          const res = await fetch(fetchUrl);
+
+          if (res.ok) {
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+              const data = await res.json();
+              if (data && data.status) {
+                console.log("[SafeTap Diagnostic API Success]", { status: data.status, lat: data.latitude, lng: data.longitude });
+                handleDataUpdate(data);
+                return;
+              }
+            }
+          }
+
+          if (res.status === 400 || res.status === 403) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('statusBadge').style.display = 'none';
+            document.getElementById('alertBanner').innerHTML = '🔒 <strong>Access Denied:</strong> Invalid or revoked access token.';
+            if (pollInterval) clearInterval(pollInterval);
+            return;
+          }
+        } catch (apiErr) {
+          console.warn("API fallback error:", apiErr);
+        }
+
+        // Session not yet present
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('statusBadge').style.display = 'none';
+        document.getElementById('alertBanner').innerHTML = `⚠️ <strong>Live tracking session not found or has expired.</strong><br><small style="opacity: 0.8;">Regional DB: ${RTDB_BASE_URL.replace('https://', '')}</small>`;
+      }
+
+      function startPollingFallback() {
+        fetchLocationOnce();
+        if (!pollInterval) {
+          pollInterval = setInterval(fetchLocationOnce, 3000);
+        }
+      }
+
+      // Start live connection
+      startLiveStream();
+    }
+  </script>
+</body>
+
+</html>

@@ -1,8 +1,11 @@
 package com.safetap.app.ui.screens.home
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.net.Uri
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -86,6 +89,7 @@ import com.safetap.app.ui.theme.SafeGreenContainer
 import com.safetap.app.ui.theme.SafeGreenLight
 import com.safetap.app.ui.theme.WarningAmber
 import com.safetap.app.ui.theme.WarningAmberContainer
+import com.safetap.app.util.TimeUtils
 import kotlinx.coroutines.delay
 
 data class ActivityItem(
@@ -94,7 +98,8 @@ data class ActivityItem(
     val timeAgo: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val iconColor: Color,
-    val iconBgColor: Color
+    val iconBgColor: Color,
+    val timestamp: Long
 )
 
 @Composable
@@ -122,32 +127,59 @@ fun HomeScreen(
         }
     }
 
-    val recentActivities = listOf(
-        ActivityItem(
-            title = stringResource(R.string.activity_protected_title),
-            description = stringResource(R.string.activity_protected_desc),
-            timeAgo = stringResource(R.string.just_now),
-            icon = Icons.Filled.Shield,
-            iconColor = SafeGreen,
-            iconBgColor = SafeGreenContainer
-        ),
-        ActivityItem(
-            title = stringResource(R.string.activity_location_sync_title),
-            description = stringResource(R.string.activity_location_sync_desc),
-            timeAgo = stringResource(R.string.time_ago_m, 12),
-            icon = Icons.Outlined.MyLocation,
-            iconColor = Color(0xFF1976D2),
-            iconBgColor = Color(0xFFE3F2FD)
-        ),
-        ActivityItem(
-            title = stringResource(R.string.activity_contacts_linked_title),
-            description = stringResource(R.string.activity_contacts_linked_desc),
-            timeAgo = stringResource(R.string.time_ago_h, 1),
-            icon = Icons.Filled.People,
-            iconColor = Color(0xFF7B1FA2),
-            iconBgColor = Color(0xFFF3E5F5)
-        )
-    )
+    val recentActivities = remember(
+        uiState.contactsCount,
+        uiState.safeTapProtectedAt,
+        uiState.locationSynchronizedAt,
+        uiState.contactsLinkedAt,
+        uiState.currentTime
+    ) {
+        val activities = mutableListOf<ActivityItem>()
+
+        uiState.safeTapProtectedAt?.let { timestamp ->
+            activities.add(
+                ActivityItem(
+                    title = "SafeTap Protected",
+                    description = "Background protection active & ready",
+                    timeAgo = TimeUtils.formatRelativeTime(timestamp),
+                    icon = Icons.Filled.Shield,
+                    iconColor = SafeGreen,
+                    iconBgColor = SafeGreenContainer,
+                    timestamp = timestamp
+                )
+            )
+        }
+
+        uiState.locationSynchronizedAt?.let { timestamp ->
+            activities.add(
+                ActivityItem(
+                    title = "Location Synchronized",
+                    description = "GPS lock established with 5m accuracy",
+                    timeAgo = TimeUtils.formatRelativeTime(timestamp),
+                    icon = Icons.Outlined.MyLocation,
+                    iconColor = Color(0xFF1976D2),
+                    iconBgColor = Color(0xFFE3F2FD),
+                    timestamp = timestamp
+                )
+            )
+        }
+
+        uiState.contactsLinkedAt?.let { timestamp ->
+            activities.add(
+                ActivityItem(
+                    title = "${uiState.contactsCount} ${if (uiState.contactsCount == 1) "Contact" else "Contacts"} Linked",
+                    description = "Emergency SMS broadcast ready",
+                    timeAgo = TimeUtils.formatRelativeTime(timestamp),
+                    icon = Icons.Filled.People,
+                    iconColor = Color(0xFF7B1FA2),
+                    iconBgColor = Color(0xFFF3E5F5),
+                    timestamp = timestamp
+                )
+            )
+        }
+
+        activities.sortedByDescending { it.timestamp }
+    }
 
     // Emergency Call Dialog
     if (showEmergencyCallDialog) {
@@ -174,10 +206,21 @@ fun HomeScreen(
                 Button(
                     onClick = {
                         showEmergencyCallDialog = false
-                        val intent = Intent(Intent.ACTION_DIAL).apply {
+                        val callIntent = Intent(Intent.ACTION_CALL).apply {
                             data = Uri.parse("tel:112")
                         }
-                        context.startActivity(intent)
+                        if (ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.CALL_PHONE
+                            ) == PackageManager.PERMISSION_GRANTED
+                        ) {
+                            context.startActivity(callIntent)
+                        } else {
+                            val dialIntent = Intent(Intent.ACTION_DIAL).apply {
+                                data = Uri.parse("tel:112")
+                            }
+                            context.startActivity(dialIntent)
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = EmergencyRed)
                 ) {
@@ -354,7 +397,7 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // "SafeTap Ready" Status Card
-        StatusReadyBanner()
+        StatusReadyBanner(uiState.contactsCount)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -423,7 +466,10 @@ fun HomeScreen(
                 iconBackgroundColor = Color(0xFFF3E5F5),
                 onClick = onNavigateToContacts,
                 modifier = Modifier.weight(1f),
-                badgeText = stringResource(R.string.contacts_linked_count, 3)
+                badgeText = stringResource(
+                    R.string.contacts_linked_count,
+                    uiState.contactsCount
+                )
             )
         }
 
@@ -458,101 +504,109 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         // Recent Activity Section
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        AnimatedVisibility(
+            visible = recentActivities.isNotEmpty(),
+            enter = fadeIn(),
+            exit = fadeOut()
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.History,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = stringResource(R.string.recent_activity),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Activity List
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                recentActivities.forEachIndexed { index, activity ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(activity.iconBgColor),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = activity.icon,
-                                contentDescription = null,
-                                tint = activity.iconColor,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = activity.title,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = activity.description,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        Text(
-                            text = activity.timeAgo,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Outlined.History,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
                         )
-                    }
-
-                    if (index < recentActivities.size - 1) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(1.dp)
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.recent_activity),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Activity List
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        recentActivities.forEachIndexed { index, activity ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(CircleShape)
+                                        .background(activity.iconBgColor),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = activity.icon,
+                                        contentDescription = null,
+                                        tint = activity.iconColor,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = activity.title,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = activity.description,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+
+                                Text(
+                                    text = activity.timeAgo,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                )
+                            }
+
+                            if (index < recentActivities.size - 1) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
     }
 
     if (showIncomingFakeCall) {
@@ -563,7 +617,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun StatusReadyBanner() {
+private fun StatusReadyBanner(contactsCount: Int) {
     val infiniteTransition = rememberInfiniteTransition(label = "StatusGlow")
     val glowScale by infiniteTransition.animateFloat(
         initialValue = 1f,
