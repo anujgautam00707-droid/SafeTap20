@@ -54,6 +54,44 @@
     <string name="home_dialog_ringing">Sonnerie...</string>
     <string name="dismiss">Ignorer</string>
 
+    <!-- SOS Screen -->
+    <string name="sos_title">SOS d\'Urgence</string>
+    <string name="sos_status_idle">Appuyez sur le bouton pour lancer le compte à rebours de 5s</string>
+    <string name="sos_status_checking_permissions">Vérification des autorisations d\'urgence</string>
+    <string name="sos_status_countdown">Envoi du SOS dans %1$ds</string>
+    <string name="sos_status_preparing">Préparation de l\'alerte d\'urgence</string>
+    <string name="sos_status_ready">Données d\'urgence prêtes</string>
+    <string name="sos_status_active">DIFFUSION D\'URGENCE ACTIVE</string>
+    <string name="sos_status_cancelled">Alerte SOS annulée</string>
+    <string name="sos_status_permissions_required">Autorisations requises pour déclencher le SOS</string>
+    <string name="sos_badge_armed">ARMÉ</string>
+    <string name="sos_badge_checking">VÉRIFICATION</string>
+    <string name="sos_badge_permissions">AUTORISATIONS</string>
+    <string name="sos_badge_counting">DÉCOMPTE</string>
+    <string name="sos_badge_preparing">PRÉPARATION</string>
+    <string name="sos_badge_ready">PRÊT</string>
+    <string name="sos_badge_alerting">ALERTE</string>
+    <string name="sos_badge_cancelled">ANNULÉ</string>
+    <string name="sos_badge_error">ERREUR</string>
+    <string name="sos_btn_tap_trigger_now">TOUCHER POUR DÉCLENCHER</string>
+    <string name="sos_btn_active">ACTIF</string>
+    <string name="sos_btn_sos">SOS</string>
+    <string name="sos_btn_start_timer">DÉMARRER LE MINUTEUR 5S</string>
+    <string name="sos_btn_reset">Réinitialiser SOS</string>
+    <string name="sos_btn_dismiss_error">Ignorer l\'Erreur</string>
+    <string name="sos_btn_cancel_alert">Annuler l\'Alerte / Je Suis en Sécurité</string>
+    <string name="sos_btn_test_countdown">Tester le Compte à Rebours 5s</string>
+    <string name="sos_card_broadcast_active">Diffusion d\'Urgence Active</string>
+    <string name="sos_card_dispatch_standby">En Attente de Déclenchement</string>
+    <string name="sos_card_alerting_desc">Alerte de 3 contacts de confiance avec audio et position en direct</string>
+    <string name="sos_card_standby_desc">3 contacts seront alertés immédiatement lors du déclenchement</string>
+    <string name="sos_card_gps_locked">Position GPS Verrouillée</string>
+    <string name="sos_badge_high_precision">HAUTE PRÉCISION</string>
+    <string name="sos_card_gps_desc">37.7749° N, 122.4194° O • Précision ±3.5m</string>
+    <string name="sos_card_battery_status">État de la Batterie : %1$d%%</string>
+    <string name="sos_card_battery_reading">État de la Batterie : Lecture...</string>
+    <string name="sos_card_battery_desc">Lecture en temps réel de cet appareil</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Paramètres</string>
     <string name="settings_subtitle">Préférences, configurations d\'urgence et profil</string>

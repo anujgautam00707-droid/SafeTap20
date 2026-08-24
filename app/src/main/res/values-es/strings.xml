@@ -54,6 +54,44 @@
     <string name="home_dialog_ringing">Sonando...</string>
     <string name="dismiss">Descartar</string>
 
+    <!-- SOS Screen -->
+    <string name="sos_title">SOS de Emergencia</string>
+    <string name="sos_status_idle">Toca el botón para iniciar la cuenta regresiva de 5 segundos</string>
+    <string name="sos_status_checking_permissions">Comprobando permisos de emergencia</string>
+    <string name="sos_status_countdown">Enviando SOS en %1$ds</string>
+    <string name="sos_status_preparing">Preparando transmisión de emergencia</string>
+    <string name="sos_status_ready">Datos de emergencia listos</string>
+    <string name="sos_status_active">TRANSMISIÓN DE EMERGENCIA ACTIVA</string>
+    <string name="sos_status_cancelled">Alerta SOS cancelada</string>
+    <string name="sos_status_permissions_required">Permisos requeridos para activar SOS</string>
+    <string name="sos_badge_armed">ARMADO</string>
+    <string name="sos_badge_checking">COMPROBANDO</string>
+    <string name="sos_badge_permissions">PERMISOS</string>
+    <string name="sos_badge_counting">CONTANDO</string>
+    <string name="sos_badge_preparing">PREPARANDO</string>
+    <string name="sos_badge_ready">LISTO</string>
+    <string name="sos_badge_alerting">ALERTANDO</string>
+    <string name="sos_badge_cancelled">CANCELADO</string>
+    <string name="sos_badge_error">ERROR</string>
+    <string name="sos_btn_tap_trigger_now">TOCA PARA ACTIVAR AHORA</string>
+    <string name="sos_btn_active">ACTIVO</string>
+    <string name="sos_btn_sos">SOS</string>
+    <string name="sos_btn_start_timer">INICIAR TEMPORIZADOR DE 5S</string>
+    <string name="sos_btn_reset">Restablecer SOS</string>
+    <string name="sos_btn_dismiss_error">Descartar Error</string>
+    <string name="sos_btn_cancel_alert">Cancelar Alerta / Estoy a Salvo</string>
+    <string name="sos_btn_test_countdown">Probar Cuenta Regresiva de 5s</string>
+    <string name="sos_card_broadcast_active">Transmisión de Emergencia Activa</string>
+    <string name="sos_card_dispatch_standby">Despacho de Emergencia en Espera</string>
+    <string name="sos_card_alerting_desc">Alertando a 3 contactos con audio y ubicación en vivo</string>
+    <string name="sos_card_standby_desc">Se alertará a 3 contactos inmediatamente al activarse</string>
+    <string name="sos_card_gps_locked">Ubicación GPS Bloqueada</string>
+    <string name="sos_badge_high_precision">ALTA PRECISIÓN</string>
+    <string name="sos_card_gps_desc">37.7749° N, 122.4194° W • Precisión ±3.5m</string>
+    <string name="sos_card_battery_status">Estado de Batería: %1$d%%</string>
+    <string name="sos_card_battery_reading">Estado de Batería: Leyendo...</string>
+    <string name="sos_card_battery_desc">Lectura en tiempo real de este dispositivo</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Ajustes</string>
     <string name="settings_subtitle">Preferencias, configuraciones de emergencia y perfil</string>

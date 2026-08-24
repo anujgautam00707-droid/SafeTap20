@@ -54,6 +54,44 @@
     <string name="home_dialog_ringing">Es klingelt...</string>
     <string name="dismiss">Schließen</string>
 
+    <!-- SOS Screen -->
+    <string name="sos_title">Notfall-SOS</string>
+    <string name="sos_status_idle">Tippen Sie auf die Schaltfläche, um den 5-Sekunden-Countdown zu starten</string>
+    <string name="sos_status_checking_permissions">Notfallberechtigungen werden überprüft</string>
+    <string name="sos_status_countdown">SOS wird in %1$ds versendet</string>
+    <string name="sos_status_preparing">Notfallübertragung wird vorbereitet</string>
+    <string name="sos_status_ready">Notfalldaten bereit</string>
+    <string name="sos_status_active">NOTFALLÜBERTRAGUNG AKTIV</string>
+    <string name="sos_status_cancelled">SOS-Alarm abgebrochen</string>
+    <string name="sos_status_permissions_required">Berechtigungen erforderlich, um SOS auszulösen</string>
+    <string name="sos_badge_armed">BEREIT</string>
+    <string name="sos_badge_checking">PRÜFUNG</string>
+    <string name="sos_badge_permissions">RECHTE</string>
+    <string name="sos_badge_counting">ZÄHLT</string>
+    <string name="sos_badge_preparing">VORBEREITUNG</string>
+    <string name="sos_badge_ready">BEREIT</string>
+    <string name="sos_badge_alerting">ALARM</string>
+    <string name="sos_badge_cancelled">ABGEBROCHEN</string>
+    <string name="sos_badge_error">FEHLER</string>
+    <string name="sos_btn_tap_trigger_now">JETZT AUSLÖSEN</string>
+    <string name="sos_btn_active">AKTIV</string>
+    <string name="sos_btn_sos">SOS</string>
+    <string name="sos_btn_start_timer">5S TIMER STARTEN</string>
+    <string name="sos_btn_reset">SOS Zurücksetzen</string>
+    <string name="sos_btn_dismiss_error">Fehler Schließen</string>
+    <string name="sos_btn_cancel_alert">Alarm Abbrechen / Ich bin in Sicherheit</string>
+    <string name="sos_btn_test_countdown">5-Sekunden SOS-Countdown testen</string>
+    <string name="sos_card_broadcast_active">Notfallübertragung Aktiv</string>
+    <string name="sos_card_dispatch_standby">Notfallzentrale Standby</string>
+    <string name="sos_card_alerting_desc">3 Kontakte werden mit Live-Audio &amp; Standort benachrichtigt</string>
+    <string name="sos_card_standby_desc">3 Kontakte werden sofort nach Auslösung alarmiert</string>
+    <string name="sos_card_gps_locked">GPS-Standort Fixiert</string>
+    <string name="sos_badge_high_precision">HOHE PRÄZISION</string>
+    <string name="sos_card_gps_desc">37.7749° N, 122.4194° W • Genauigkeit ±3.5m</string>
+    <string name="sos_card_battery_status">Akkustand: %1$d%%</string>
+    <string name="sos_card_battery_reading">Akkustand: Wird gelesen...</string>
+    <string name="sos_card_battery_desc">Live-Messung von diesem Gerät</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Einstellungen</string>
     <string name="settings_subtitle">Präferenzen, Notfallkonfigurationen &amp; Profil</string>

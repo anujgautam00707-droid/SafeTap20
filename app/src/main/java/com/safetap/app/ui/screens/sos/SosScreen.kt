@@ -54,11 +54,13 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.safetap.app.R
 import com.safetap.app.di.SafeTapViewModelFactory
 import com.safetap.app.ui.theme.EmergencyRed
 import com.safetap.app.ui.theme.EmergencyRedContainer
@@ -74,40 +76,25 @@ fun SosScreen(
     viewModel: SosViewModel = viewModel(factory = SafeTapViewModelFactory)
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val batteryPercentage by
-    viewModel.batteryPercentage.collectAsStateWithLifecycle()
+    val batteryPercentage by viewModel.batteryPercentage.collectAsStateWithLifecycle()
 
-    val isCheckingPermissions =
-        uiState == SosUiState.CheckingPermissions
+    val isCheckingPermissions = uiState == SosUiState.CheckingPermissions
+    val isCountdown = uiState is SosUiState.Countdown
+    val isEmergencyActive = uiState == SosUiState.CollectingEmergencyData ||
+            uiState is SosUiState.ReadyToSend ||
+            uiState is SosUiState.Active
 
-    val isCountdown =
-        uiState is SosUiState.Countdown
+    val usesCountdownVisuals = isCheckingPermissions || isCountdown
+    val isSosInProgress = usesCountdownVisuals || isEmergencyActive
+    val countdownSeconds = (uiState as? SosUiState.Countdown)?.secondsRemaining ?: 5
 
-    val isEmergencyActive =
-        uiState == SosUiState.CollectingEmergencyData ||
-                uiState is SosUiState.ReadyToSend ||
-                uiState is SosUiState.Active
-
-    val usesCountdownVisuals =
-        isCheckingPermissions || isCountdown
-
-    val isSosInProgress =
-        usesCountdownVisuals || isEmergencyActive
-
-    val countdownSeconds =
-        (uiState as? SosUiState.Countdown)?.secondsRemaining ?: 5
-
-    val infiniteTransition =
-        rememberInfiniteTransition(label = "SosEmergencyPulse")
+    val infiniteTransition = rememberInfiniteTransition(label = "SosEmergencyPulse")
 
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1f,
         targetValue = 1.25f,
         animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 1200,
-                easing = FastOutSlowInEasing
-            ),
+            animation = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "SosScale"
@@ -117,10 +104,7 @@ fun SosScreen(
         initialValue = 0.5f,
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(
-                durationMillis = 1200,
-                easing = FastOutSlowInEasing
-            ),
+            animation = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "SosAlpha"
@@ -137,27 +121,20 @@ fun SosScreen(
                             Color(0xFF1E0505),
                             MaterialTheme.colorScheme.background
                         )
-
                         usesCountdownVisuals -> listOf(
                             Color(0xFF2E1005),
                             Color(0xFF1E0A05),
                             MaterialTheme.colorScheme.background
                         )
-
                         else -> listOf(
                             MaterialTheme.colorScheme.background,
-                            MaterialTheme.colorScheme.surfaceVariant.copy(
-                                alpha = 0.3f
-                            )
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                         )
                     }
                 )
             )
             .verticalScroll(rememberScrollState())
-            .padding(
-                horizontal = 20.dp,
-                vertical = 16.dp
-            ),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
@@ -169,7 +146,7 @@ fun SosScreen(
         ) {
             Column {
                 Text(
-                    text = "Emergency SOS",
+                    text = stringResource(R.string.sos_title),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -177,32 +154,15 @@ fun SosScreen(
 
                 Text(
                     text = when (val state = uiState) {
-                        SosUiState.Idle ->
-                            "Tap button to start 5-second countdown"
-
-                        SosUiState.CheckingPermissions ->
-                            "Checking emergency permissions"
-
-                        is SosUiState.Countdown ->
-                            "Dispatching SOS in ${state.secondsRemaining}s"
-
-                        SosUiState.CollectingEmergencyData ->
-                            "Preparing emergency broadcast"
-
-                        is SosUiState.ReadyToSend ->
-                            "Emergency data ready"
-
-                        is SosUiState.Active ->
-                            "EMERGENCY BROADCAST ACTIVE"
-
-                        SosUiState.Cancelled ->
-                            "SOS alert cancelled"
-
-                        is SosUiState.Error ->
-                            state.message
-
-                        SosUiState.PermissionsRequired ->
-                            "Permissions required to trigger SOS"
+                        SosUiState.Idle -> stringResource(R.string.sos_status_idle)
+                        SosUiState.CheckingPermissions -> stringResource(R.string.sos_status_checking_permissions)
+                        is SosUiState.Countdown -> stringResource(R.string.sos_status_countdown, state.secondsRemaining)
+                        SosUiState.CollectingEmergencyData -> stringResource(R.string.sos_status_preparing)
+                        is SosUiState.ReadyToSend -> stringResource(R.string.sos_status_ready)
+                        is SosUiState.Active -> stringResource(R.string.sos_status_active)
+                        SosUiState.Cancelled -> stringResource(R.string.sos_status_cancelled)
+                        is SosUiState.Error -> state.message
+                        SosUiState.PermissionsRequired -> stringResource(R.string.sos_status_permissions_required)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = when (uiState) {
@@ -216,8 +176,7 @@ fun SosScreen(
                         is SosUiState.Error -> EmergencyRedLight
 
                         SosUiState.Idle,
-                        SosUiState.Cancelled ->
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                        SosUiState.Cancelled -> MaterialTheme.colorScheme.onSurfaceVariant
                     },
                     fontWeight = FontWeight.SemiBold
                 )
@@ -241,22 +200,19 @@ fun SosScreen(
                             SosUiState.Cancelled -> SafeGreen
                         }
                     )
-                    .padding(
-                        horizontal = 10.dp,
-                        vertical = 5.dp
-                    )
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
             ) {
                 Text(
                     text = when (uiState) {
-                        SosUiState.Idle -> "ARMED"
-                        SosUiState.CheckingPermissions -> "CHECKING"
-                        SosUiState.PermissionsRequired -> "PERMISSIONS"
-                        is SosUiState.Countdown -> "COUNTING"
-                        SosUiState.CollectingEmergencyData -> "PREPARING"
-                        is SosUiState.ReadyToSend -> "READY"
-                        is SosUiState.Active -> "ALERTING"
-                        SosUiState.Cancelled -> "CANCELLED"
-                        is SosUiState.Error -> "ERROR"
+                        SosUiState.Idle -> stringResource(R.string.sos_badge_armed)
+                        SosUiState.CheckingPermissions -> stringResource(R.string.sos_badge_checking)
+                        SosUiState.PermissionsRequired -> stringResource(R.string.sos_badge_permissions)
+                        is SosUiState.Countdown -> stringResource(R.string.sos_badge_counting)
+                        SosUiState.CollectingEmergencyData -> stringResource(R.string.sos_badge_preparing)
+                        is SosUiState.ReadyToSend -> stringResource(R.string.sos_badge_ready)
+                        is SosUiState.Active -> stringResource(R.string.sos_badge_alerting)
+                        SosUiState.Cancelled -> stringResource(R.string.sos_badge_cancelled)
+                        is SosUiState.Error -> stringResource(R.string.sos_badge_error)
                     },
                     color = EmergencyWhite,
                     fontSize = 11.sp,
@@ -278,13 +234,7 @@ fun SosScreen(
                         .size(230.dp)
                         .scale(pulseScale)
                         .background(
-                            color = (
-                                    if (isEmergencyActive) {
-                                        EmergencyRed
-                                    } else {
-                                        WarningAmber
-                                    }
-                                    ).copy(alpha = pulseAlpha),
+                            color = (if (isEmergencyActive) EmergencyRed else WarningAmber).copy(alpha = pulseAlpha),
                             shape = CircleShape
                         )
                 )
@@ -293,10 +243,7 @@ fun SosScreen(
             if (usesCountdownVisuals) {
                 val animatedProgress by animateFloatAsState(
                     targetValue = countdownSeconds / 5f,
-                    animationSpec = tween(
-                        durationMillis = 900,
-                        easing = LinearEasing
-                    ),
+                    animationSpec = tween(durationMillis = 900, easing = LinearEasing),
                     label = "CountdownArc"
                 )
 
@@ -306,8 +253,7 @@ fun SosScreen(
                     color = WarningAmber,
                     strokeWidth = 8.dp,
                     trackColor = WarningAmber.copy(alpha = 0.2f),
-                    strokeCap =
-                        ProgressIndicatorDefaults.CircularDeterminateStrokeCap
+                    strokeCap = ProgressIndicatorDefaults.CircularDeterminateStrokeCap
                 )
             } else if (isEmergencyActive) {
                 CircularProgressIndicator(
@@ -332,90 +278,57 @@ fun SosScreen(
                     .background(
                         brush = Brush.radialGradient(
                             colors = when {
-                                isEmergencyActive -> listOf(
-                                    EmergencyRedLight,
-                                    EmergencyRed,
-                                    EmergencyRedDark
-                                )
-
-                                usesCountdownVisuals -> listOf(
-                                    Color(0xFFFFB74D),
-                                    WarningAmber,
-                                    Color(0xFFE65100)
-                                )
-
-                                else -> listOf(
-                                    EmergencyRedLight,
-                                    EmergencyRed,
-                                    EmergencyRedDark
-                                )
+                                isEmergencyActive -> listOf(EmergencyRedLight, EmergencyRed, EmergencyRedDark)
+                                usesCountdownVisuals -> listOf(Color(0xFFFFB74D), WarningAmber, Color(0xFFE65100))
+                                else -> listOf(EmergencyRedLight, EmergencyRed, EmergencyRedDark)
                             }
                         )
                     )
                     .clickable(
-                        interactionSource =
-                            remember { MutableInteractionSource() },
-                        indication = ripple(
-                            bounded = true,
-                            color = EmergencyWhite
-                        ),
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(bounded = true, color = EmergencyWhite),
                         onClick = {
                             when (uiState) {
-                                SosUiState.Idle ->
-                                    viewModel.startSos()
-
-                                is SosUiState.Countdown ->
-                                    viewModel.triggerImmediately()
-
+                                SosUiState.Idle -> viewModel.startSos()
+                                is SosUiState.Countdown -> viewModel.triggerImmediately()
                                 else -> Unit
                             }
                         }
                     )
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     when {
                         usesCountdownVisuals -> {
                             Text(
                                 text = "${countdownSeconds}s",
                                 color = EmergencyWhite,
-                                style =
-                                    MaterialTheme.typography.displayLarge,
+                                style = MaterialTheme.typography.displayLarge,
                                 fontWeight = FontWeight.Black
                             )
-
                             Text(
-                                text = "TAP TO TRIGGER NOW",
-                                color =
-                                    EmergencyWhite.copy(alpha = 0.9f),
+                                text = stringResource(R.string.sos_btn_tap_trigger_now),
+                                color = EmergencyWhite.copy(alpha = 0.9f),
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.8.sp
                             )
                         }
-
                         isEmergencyActive -> {
                             Icon(
-                                imageVector =
-                                    Icons.Filled.NotificationsActive,
+                                imageVector = Icons.Filled.NotificationsActive,
                                 contentDescription = null,
                                 tint = EmergencyWhite,
                                 modifier = Modifier.size(44.dp)
                             )
-
                             Spacer(modifier = Modifier.height(4.dp))
-
                             Text(
-                                text = "ACTIVE",
+                                text = stringResource(R.string.sos_btn_active),
                                 color = EmergencyWhite,
-                                style =
-                                    MaterialTheme.typography.headlineMedium,
+                                style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = 1.5.sp
                             )
                         }
-
                         else -> {
                             Icon(
                                 imageVector = Icons.Filled.Warning,
@@ -423,22 +336,17 @@ fun SosScreen(
                                 tint = EmergencyWhite,
                                 modifier = Modifier.size(44.dp)
                             )
-
                             Spacer(modifier = Modifier.height(4.dp))
-
                             Text(
-                                text = "SOS",
+                                text = stringResource(R.string.sos_btn_sos),
                                 color = EmergencyWhite,
-                                style =
-                                    MaterialTheme.typography.headlineLarge,
+                                style = MaterialTheme.typography.headlineLarge,
                                 fontWeight = FontWeight.Black,
                                 letterSpacing = 2.sp
                             )
-
                             Text(
-                                text = "START 5S TIMER",
-                                color =
-                                    EmergencyWhite.copy(alpha = 0.85f),
+                                text = stringResource(R.string.sos_btn_start_timer),
+                                color = EmergencyWhite.copy(alpha = 0.85f),
                                 fontSize = 9.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 0.8.sp
@@ -456,11 +364,8 @@ fun SosScreen(
                 onClick = {
                     when (uiState) {
                         SosUiState.Cancelled,
-                        is SosUiState.Error ->
-                            viewModel.resetSos()
-
-                        else ->
-                            viewModel.cancelSos()
+                        is SosUiState.Error -> viewModel.resetSos()
+                        else -> viewModel.cancelSos()
                     }
                 },
                 modifier = Modifier
@@ -468,13 +373,10 @@ fun SosScreen(
                     .height(54.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor =
-                        MaterialTheme.colorScheme.surface,
-                    contentColor =
-                        MaterialTheme.colorScheme.onSurface
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface
                 ),
-                elevation =
-                    ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.Cancel,
@@ -487,9 +389,9 @@ fun SosScreen(
 
                 Text(
                     text = when (uiState) {
-                        SosUiState.Cancelled -> "Reset SOS"
-                        is SosUiState.Error -> "Dismiss Error"
-                        else -> "Cancel Alert / I Am Safe"
+                        SosUiState.Cancelled -> stringResource(R.string.sos_btn_reset)
+                        is SosUiState.Error -> stringResource(R.string.sos_btn_dismiss_error)
+                        else -> stringResource(R.string.sos_btn_cancel_alert)
                     },
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
@@ -504,7 +406,7 @@ fun SosScreen(
                 shape = RoundedCornerShape(14.dp)
             ) {
                 Text(
-                    text = "Test 5-Second SOS Countdown",
+                    text = stringResource(R.string.sos_btn_test_countdown),
                     fontWeight = FontWeight.SemiBold
                 )
             }
@@ -526,8 +428,7 @@ fun SosScreen(
                         MaterialTheme.colorScheme.surface
                     }
                 ),
-                elevation =
-                    CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -540,11 +441,7 @@ fun SosScreen(
                             .size(42.dp)
                             .clip(CircleShape)
                             .background(
-                                if (isEmergencyActive) {
-                                    EmergencyRed
-                                } else {
-                                    MaterialTheme.colorScheme.primaryContainer
-                                }
+                                if (isEmergencyActive) EmergencyRed else MaterialTheme.colorScheme.primaryContainer
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -555,11 +452,7 @@ fun SosScreen(
                                 Icons.Outlined.Shield
                             },
                             contentDescription = null,
-                            tint = if (isEmergencyActive) {
-                                EmergencyWhite
-                            } else {
-                                MaterialTheme.colorScheme.primary
-                            },
+                            tint = if (isEmergencyActive) EmergencyWhite else MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -569,32 +462,25 @@ fun SosScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = if (isEmergencyActive) {
-                                "Emergency Broadcast Active"
+                                stringResource(R.string.sos_card_broadcast_active)
                             } else {
-                                "Emergency Dispatch Standby"
+                                stringResource(R.string.sos_card_dispatch_standby)
                             },
-                            style =
-                                MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = if (isEmergencyActive) {
-                                EmergencyRed
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            }
+                            color = if (isEmergencyActive) EmergencyRed else MaterialTheme.colorScheme.onSurface
                         )
 
                         Spacer(modifier = Modifier.height(2.dp))
 
                         Text(
                             text = if (isEmergencyActive) {
-                                "Alerting 3 trusted contacts with live audio & location"
+                                stringResource(R.string.sos_card_alerting_desc)
                             } else {
-                                "3 contacts will be alerted immediately on trigger"
+                                stringResource(R.string.sos_card_standby_desc)
                             },
-                            style =
-                                MaterialTheme.typography.bodySmall,
-                            color =
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -604,11 +490,9 @@ fun SosScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor =
-                        MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
-                elevation =
-                    CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -634,17 +518,12 @@ fun SosScreen(
                     Spacer(modifier = Modifier.width(14.dp))
 
                     Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment =
-                                Alignment.CenterVertically
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "GPS Location Locked",
-                                style =
-                                    MaterialTheme.typography.titleMedium,
+                                text = stringResource(R.string.sos_card_gps_locked),
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color =
-                                    MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface
                             )
 
                             Spacer(modifier = Modifier.width(6.dp))
@@ -653,13 +532,10 @@ fun SosScreen(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(6.dp))
                                     .background(SafeGreenContainer)
-                                    .padding(
-                                        horizontal = 6.dp,
-                                        vertical = 2.dp
-                                    )
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text(
-                                    text = "HIGH PRECISION",
+                                    text = stringResource(R.string.sos_badge_high_precision),
                                     color = SafeGreen,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold
@@ -670,12 +546,9 @@ fun SosScreen(
                         Spacer(modifier = Modifier.height(2.dp))
 
                         Text(
-                            text =
-                                "37.7749° N, 122.4194° W • Accuracy ±3.5m",
-                            style =
-                                MaterialTheme.typography.bodySmall,
-                            color =
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            text = stringResource(R.string.sos_card_gps_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -685,11 +558,9 @@ fun SosScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor =
-                        MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.surface
                 ),
-                elevation =
-                    CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -705,8 +576,7 @@ fun SosScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector =
-                                Icons.Filled.BatteryChargingFull,
+                            imageVector = Icons.Filled.BatteryChargingFull,
                             contentDescription = null,
                             tint = Color(0xFF0284C7),
                             modifier = Modifier.size(24.dp)
@@ -718,23 +588,19 @@ fun SosScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = batteryPercentage?.let { percentage ->
-                                "Battery Status: $percentage%"
-                            } ?: "Battery Status: Reading...",
-                            style =
-                                MaterialTheme.typography.titleMedium,
+                                stringResource(R.string.sos_card_battery_status, percentage)
+                            } ?: stringResource(R.string.sos_card_battery_reading),
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color =
-                                MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Spacer(modifier = Modifier.height(2.dp))
 
                         Text(
-                            text = "Live reading from this device",
-                            style =
-                                MaterialTheme.typography.bodySmall,
-                            color =
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            text = stringResource(R.string.sos_card_battery_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

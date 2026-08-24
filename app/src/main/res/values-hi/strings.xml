@@ -54,6 +54,44 @@
     <string name="home_dialog_ringing">कॉल आ रही है...</string>
     <string name="dismiss">खारिज करें</string>
 
+    <!-- SOS Screen -->
+    <string name="sos_title">आपातकालीन SOS</string>
+    <string name="sos_status_idle">5-सेकंड का काउंटडाउन शुरू करने के लिए बटन टैप करें</string>
+    <string name="sos_status_checking_permissions">आपातकालीन अनुमतियों की जांच की जा रही है</string>
+    <string name="sos_status_countdown">%1$d सेकंड में SOS भेजा जा रहा है</string>
+    <string name="sos_status_preparing">आपातकालीन प्रसारण तैयार किया जा रहा है</string>
+    <string name="sos_status_ready">आपातकालीन डेटा तैयार है</string>
+    <string name="sos_status_active">आपातकालीन प्रसारण सक्रिय है</string>
+    <string name="sos_status_cancelled">SOS अलर्ट रद्द कर दिया गया</string>
+    <string name="sos_status_permissions_required">SOS ट्रिगर करने के लिए अनुमतियां आवश्यक हैं</string>
+    <string name="sos_badge_armed">सशस्त्र</string>
+    <string name="sos_badge_checking">जांच जारी</string>
+    <string name="sos_badge_permissions">अनुमतियां</string>
+    <string name="sos_badge_counting">गिनती जारी</string>
+    <string name="sos_badge_preparing">तैयारी जारी</string>
+    <string name="sos_badge_ready">तैयार</string>
+    <string name="sos_badge_alerting">अलर्टिंग</string>
+    <string name="sos_badge_cancelled">रद्द किया गया</string>
+    <string name="sos_badge_error">त्रुटि</string>
+    <string name="sos_btn_tap_trigger_now">तुरंत ट्रिगर करने के लिए टैप करें</string>
+    <string name="sos_btn_active">सक्रिय</string>
+    <string name="sos_btn_sos">SOS</string>
+    <string name="sos_btn_start_timer">5 सेकंड का टाइमर शुरू करें</string>
+    <string name="sos_btn_reset">SOS रीसेट करें</string>
+    <string name="sos_btn_dismiss_error">त्रुटि हटाएं</string>
+    <string name="sos_btn_cancel_alert">अलर्ट रद्द करें / मैं सुरक्षित हूँ</string>
+    <string name="sos_btn_test_countdown">5-सेकंड SOS काउंटडाउन का परीक्षण करें</string>
+    <string name="sos_card_broadcast_active">आपातकालीन प्रसारण सक्रिय</string>
+    <string name="sos_card_dispatch_standby">आपातकालीन प्रेषण स्टैंडबाय</string>
+    <string name="sos_card_alerting_desc">लाइव ऑडियो और लोकेशन के साथ 3 संपर्कों को अलर्ट किया जा रहा है</string>
+    <string name="sos_card_standby_desc">ट्रिगर होने पर 3 संपर्कों को तुरंत अलर्ट भेजा जाएगा</string>
+    <string name="sos_card_gps_locked">GPS लोकेशन लॉक हो गई</string>
+    <string name="sos_badge_high_precision">उच्च सटीकता</string>
+    <string name="sos_card_gps_desc">37.7749° N, 122.4194° W • सटीकता ±3.5m</string>
+    <string name="sos_card_battery_status">बैटरी स्थिति: %1$d%%</string>
+    <string name="sos_card_battery_reading">बैटरी स्थिति: जांच जारी...</string>
+    <string name="sos_card_battery_desc">इस डिवाइस से लाइव रीडिंग</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">सेटिंग्स</string>
     <string name="settings_subtitle">प्राथमिकताएं, आपातकालीन कॉन्फ़िगरेशन और प्रोफ़ाइल</string>

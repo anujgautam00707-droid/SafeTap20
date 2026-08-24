@@ -54,6 +54,44 @@
     <string name="home_dialog_ringing">Ringing...</string>
     <string name="dismiss">Dismiss</string>
 
+    <!-- SOS Screen -->
+    <string name="sos_title">Emergency SOS</string>
+    <string name="sos_status_idle">Tap button to start 5-second countdown</string>
+    <string name="sos_status_checking_permissions">Checking emergency permissions</string>
+    <string name="sos_status_countdown">Dispatching SOS in %1$ds</string>
+    <string name="sos_status_preparing">Preparing emergency broadcast</string>
+    <string name="sos_status_ready">Emergency data ready</string>
+    <string name="sos_status_active">EMERGENCY BROADCAST ACTIVE</string>
+    <string name="sos_status_cancelled">SOS alert cancelled</string>
+    <string name="sos_status_permissions_required">Permissions required to trigger SOS</string>
+    <string name="sos_badge_armed">ARMED</string>
+    <string name="sos_badge_checking">CHECKING</string>
+    <string name="sos_badge_permissions">PERMISSIONS</string>
+    <string name="sos_badge_counting">COUNTING</string>
+    <string name="sos_badge_preparing">PREPARING</string>
+    <string name="sos_badge_ready">READY</string>
+    <string name="sos_badge_alerting">ALERTING</string>
+    <string name="sos_badge_cancelled">CANCELLED</string>
+    <string name="sos_badge_error">ERROR</string>
+    <string name="sos_btn_tap_trigger_now">TAP TO TRIGGER NOW</string>
+    <string name="sos_btn_active">ACTIVE</string>
+    <string name="sos_btn_sos">SOS</string>
+    <string name="sos_btn_start_timer">START 5S TIMER</string>
+    <string name="sos_btn_reset">Reset SOS</string>
+    <string name="sos_btn_dismiss_error">Dismiss Error</string>
+    <string name="sos_btn_cancel_alert">Cancel Alert / I Am Safe</string>
+    <string name="sos_btn_test_countdown">Test 5-Second SOS Countdown</string>
+    <string name="sos_card_broadcast_active">Emergency Broadcast Active</string>
+    <string name="sos_card_dispatch_standby">Emergency Dispatch Standby</string>
+    <string name="sos_card_alerting_desc">Alerting 3 trusted contacts with live audio &amp; location</string>
+    <string name="sos_card_standby_desc">3 contacts will be alerted immediately on trigger</string>
+    <string name="sos_card_gps_locked">GPS Location Locked</string>
+    <string name="sos_badge_high_precision">HIGH PRECISION</string>
+    <string name="sos_card_gps_desc">37.7749° N, 122.4194° W • Accuracy ±3.5m</string>
+    <string name="sos_card_battery_status">Battery Status: %1$d%%</string>
+    <string name="sos_card_battery_reading">Battery Status: Reading...</string>
+    <string name="sos_card_battery_desc">Live reading from this device</string>
+
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
     <string name="settings_subtitle">Preferences, emergency configurations &amp; profile</string>
