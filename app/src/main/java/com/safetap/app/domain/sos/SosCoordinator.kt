@@ -60,9 +60,12 @@ class SosCoordinator(
     fun getMissingPermissions(): List<String> = permissionChecker.getMissingPermissions()
 
     fun checkPermissions(): Result<Unit> {
-        return Result.success(Unit)
+        return if (permissionChecker.hasRequiredPermissions()) {
+            Result.success(Unit)
+        } else {
+            Result.failure(SosError.PermissionDenied())
+        }
     }
-
     suspend fun getBatteryPercentage(): Int = withContext(ioDispatcher) {
         batteryProvider.getBatteryPercentage()
     }
