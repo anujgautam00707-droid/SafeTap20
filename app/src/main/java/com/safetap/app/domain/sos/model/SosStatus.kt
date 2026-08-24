@@ -6,5 +6,6 @@ enum class SosStatus {
     PENDING,
     ACTIVE,
     RESOLVED,
-    CANCELLED
+    CANCELLED,
+    ENDED
 }

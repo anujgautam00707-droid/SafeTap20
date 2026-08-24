@@ -199,7 +199,7 @@ fun SettingsScreen(
             text = {
                 Column {
                     Text(
-                        text = "Customize the default emergency line dialed when using rapid dispatch. In India, 112 is the nationwide emergency response number.",
+                        text = "Customize the default emergency line dialed when using rapid dispatch (e.g. 112 in India, 999 in UK).",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

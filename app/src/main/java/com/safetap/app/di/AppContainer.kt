@@ -4,6 +4,8 @@ import android.content.Context
 import com.safetap.app.data.auth.AuthRepository
 import com.safetap.app.data.auth.FirebaseAuthManager
 import com.safetap.app.data.contacts.TrustedContactsRepository
+import com.google.firebase.database.FirebaseDatabase
+import com.safetap.app.data.sos.FirebaseSosRemoteDataSource
 import com.safetap.app.data.status.AppStatusRepository
 import com.safetap.app.data.sos.FakeSosRemoteDataSource
 import com.safetap.app.data.sos.LocalSosDataSource
@@ -13,6 +15,7 @@ import com.safetap.app.data.sos.services.DefaultEmergencyCallManager
 import com.safetap.app.data.sos.services.DefaultEmergencyNotificationManager
 import com.safetap.app.data.sos.services.DefaultEmergencySmsSender
 import com.safetap.app.data.sos.services.DefaultLocationProvider
+import com.safetap.app.data.sos.services.DefaultLocationTrackingManager
 import com.safetap.app.data.sos.services.DefaultPermissionChecker
 import com.safetap.app.domain.sos.SosCoordinator
 import com.safetap.app.domain.sos.services.BatteryProvider
@@ -20,9 +23,12 @@ import com.safetap.app.domain.sos.services.EmergencyCallManager
 import com.safetap.app.domain.sos.services.EmergencyNotificationManager
 import com.safetap.app.domain.sos.services.EmergencySmsSender
 import com.safetap.app.domain.sos.services.LocationProvider
+import com.safetap.app.domain.sos.services.LocationTrackingManager
 import com.safetap.app.domain.sos.services.PermissionChecker
 
 object AppContainer {
+
+    const val RTDB_URL = "https://safetap-2fb1e-default-rtdb.asia-southeast1.firebasedatabase.app"
 
     lateinit var authRepository: AuthRepository
         private set
@@ -51,6 +57,9 @@ object AppContainer {
     lateinit var emergencySmsSender: EmergencySmsSender
         private set
 
+    lateinit var locationTrackingManager: LocationTrackingManager
+        private set
+
     lateinit var sosRemoteDataSource: SosRemoteDataSource
         private set
 
@@ -66,6 +75,7 @@ object AppContainer {
                     ::trustedContactsRepository.isInitialized &&
                     ::appStatusRepository.isInitialized &&
                     ::emergencySmsSender.isInitialized &&
+                    ::locationTrackingManager.isInitialized &&
                     ::sosCoordinator.isInitialized
 
     fun init(context: Context? = null) {
@@ -80,6 +90,11 @@ object AppContainer {
         }
 
         val appContext = context.applicationContext
+
+        // Enable Firebase Realtime Database offline persistence on regional instance
+        runCatching {
+            FirebaseDatabase.getInstance(RTDB_URL).setPersistenceEnabled(true)
+        }
 
         appStatusRepository =
             AppStatusRepository(appContext)
@@ -115,8 +130,13 @@ object AppContainer {
         emergencySmsSender =
             DefaultEmergencySmsSender(appContext)
 
+        locationTrackingManager =
+            DefaultLocationTrackingManager(appContext)
+
         sosRemoteDataSource =
-            FakeSosRemoteDataSource()
+            FirebaseSosRemoteDataSource(
+                database = FirebaseDatabase.getInstance(RTDB_URL)
+            )
 
         localSosDataSource =
             LocalSosDataSource(appContext)
@@ -129,8 +149,9 @@ object AppContainer {
             callManager = emergencyCallManager,
             emergencySmsSender = emergencySmsSender,
             trustedContactsRepository = trustedContactsRepository,
-            appStatusRepository = appStatusRepository,
             remoteDataSource = sosRemoteDataSource,
+            locationTrackingManager = locationTrackingManager,
+            appStatusRepository = appStatusRepository,
             localSosDataSource = localSosDataSource
         )
     }
